@@ -2,11 +2,12 @@
 // the onboarding page, the live camera page, and the family page.
 import "dotenv/config";
 import express from "express";
-import { withHer, withCircle, reachOut, readMeds, type Incoming, type Role, type ElderVerdict, type Mood, type Sticker, type Reach } from "./agent.js";
+import { withHer, withCircle, reachOut, readMeds, readPills, type Incoming, type Role, type ElderVerdict, type Mood, type Sticker, type Reach } from "./agent.js";
 import { brainName } from "./brain.js";
 import { addEvent, todaysEvents } from "./store.js";
 import { getProfile, saveProfile, onboarded, getState, saveState, today, clock, type Profile } from "./profile.js";
 import { missionStatus, completeMission, markAsked } from "./missions.js";
+import { findByImprint } from "./pills.js";
 import { FAMILY_PAGE } from "./family.js";
 import { ONBOARD_PAGE } from "./onboard.js";
 import { SEE_PAGE } from "./see.js";
@@ -268,6 +269,31 @@ app.post("/api/see", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ reply: "I lost you for a second. Try once more?" });
+  }
+});
+
+// Onboarding: a photo of the pills themselves. Kinly reads what is stamped on each and looks it up.
+// A pill it cannot place stays in the list by its looks, for the family to name.
+app.post("/api/read-pills", async (req, res) => {
+  try {
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(req.body.image ?? "");
+    if (!m) return res.status(400).json({ meds: [], note: "That file isn't a photo I can open. Try a JPG or PNG." });
+    const seen = await readPills({ mediaType: m[1], data: m[2] });
+    let named = 0;
+    const meds = seen.pills.map((p) => {
+      const pill = p.imprint ? findByImprint(p.imprint) : null;
+      if (pill) named++;
+      return { name: pill ? pill.name : `${p.look}${p.imprint ? ` marked ${p.imprint}` : ""} (name?)`, slots: ["morning"] };
+    });
+    const unnamed = meds.length - named;
+    const note = meds.length === 0 ? seen.note
+      : unnamed === 0 ? "I know these by their markings. Tell me when she takes each one."
+      : named === 0 ? "I can see them, but I can't name a pill from its looks alone. Type the names in, or show me the label."
+      : `I know ${named} by the markings. Type in the name for the other${unnamed > 1 ? "s" : ""}, or show me the label.`;
+    res.json({ meds, note });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ meds: [], note: "I couldn't look at that just now. Try once more, or type them in." });
   }
 });
 

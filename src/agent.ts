@@ -207,6 +207,40 @@ export async function readMeds(image: { data: string; mediaType: string }): Prom
   return out ?? { meds: [], note: "I couldn't read that one. Could you try another photo, or type them in?" };
 }
 
+// ---------- Reading the pills themselves at onboarding ----------
+
+const PILLS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["pills", "note"],
+  properties: {
+    pills: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["look", "imprint"],
+        properties: {
+          look: { type: "string", description: "Color and shape in a few words, e.g. \"white round tablet\"." },
+          imprint: { type: ["string", "null"], description: "Letters and numbers stamped on it, exactly as you can read them, or null if you cannot read any." },
+        },
+      },
+    },
+    note: { type: "string", description: "One short sentence in Kinly's voice about what you see." },
+  },
+} as const;
+
+export type SeenPills = { pills: { look: string; imprint: string | null }[]; note: string };
+
+export async function readPills(image: { data: string; mediaType: string }): Promise<SeenPills> {
+  const out = await ask<SeenPills>(
+    `${companion()}\n\nHer family is setting you up and is showing you a photo of her pills, out of their bottles. List each different kind of pill once: its color and shape, and whatever is stamped on it. Read markings only when they are legible; a guess at a marking is worse than none. Do not name any medicine from its looks. If the photo shows a label or a bottle instead, say so in the note and list nothing.`,
+    PILLS_SCHEMA,
+    [{ text: "The photo:" }, { image }],
+  );
+  return out ?? { pills: [], note: "I couldn't make those out. Could you try again in brighter light?" };
+}
+
 // ---------- Talking with the circle ----------
 
 export type Role = "family" | "care";

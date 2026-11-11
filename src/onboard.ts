@@ -89,14 +89,14 @@ export const ONBOARD_PAGE = `<!doctype html>
   .yours .day li + li { border-top-color: #d3bf99; }
 
   /* Step 3: the photo, then the list. */
-  .shoot { display:grid; place-items:center; gap: 10px; text-align:center; padding: 34px 20px; border-radius: 22px; background: var(--paper-deep);
-           border: 2px dashed var(--ink); cursor:pointer; transition: background-color .25s; position:relative; }
-  .shoot:hover { background: #eddcb9; }
-  .shoot input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-  .shoot:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
-  .shoot b { font: 400 24px/1.2 var(--display); }
-  .shoot span { color: var(--ink-soft); font-size: 16px; }
-  .shoot .ico { width: 56px; height: 56px; }
+  .shots { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+  .shoot { display:grid; justify-items:center; align-content:start; gap: 8px; text-align:center; padding: 26px 18px; border-radius: 22px; background: var(--paper-deep);
+           border: 2px dashed var(--ink); cursor:pointer; transition: background-color .25s, transform .25s var(--out); color: var(--ink); font: inherit; }
+  .shoot:hover { background: #eddcb9; transform: translateY(-2px); }
+  .shoot b { font: 400 22px/1.2 var(--display); }
+  .shoot span { color: var(--ink-soft); font-size: 15px; line-height:1.35; }
+  .shoot .ico { width: 48px; height: 48px; }
+  .shoot[disabled] { cursor: progress; opacity:.55; transform:none; }
   .shoot.busy { cursor: progress; border-style: solid; }
   .shoot.busy .ico { animation: peer 1.1s ease-in-out infinite alternate; }
   @keyframes peer { to { transform: translateY(-5px) rotate(-6deg); } }
@@ -207,14 +207,21 @@ export const ONBOARD_PAGE = `<!doctype html>
 
     <section class="step" data-step="2" hidden>
       <h1>Her medicines</h1>
-      <p class="lede">Take a photo of her pharmacy bag, a bottle label or the prescription. Kinly reads it, and you fix anything it got wrong.</p>
-      <label class="shoot" id="shoot">
-        <svg class="ico"><use href="#i-cam"/></svg>
-        <b id="shootTitle">Take or choose a photo</b>
-        <span id="shootSub">The label with the names and the directions</span>
-        <input type="file" id="file" accept="image/*" capture="environment" aria-label="Photo of the pharmacy bag or prescription">
-      </label>
-      <img id="preview" alt="The photo you chose">
+      <p class="lede">Show Kinly the label, the pills, or both. It reads what it can, and you fix anything it got wrong.</p>
+      <div class="shots" id="shots">
+        <button type="button" class="shoot" data-read="meds">
+          <svg class="ico"><use href="#i-photo"/></svg>
+          <b>The label or prescription</b>
+          <span>Pharmacy bag, bottle label, or the slip from the clinic</span>
+        </button>
+        <button type="button" class="shoot" data-read="pills">
+          <svg class="ico"><use href="#i-pill"/></svg>
+          <b>The pills themselves</b>
+          <span>Laid out on a table, markings facing up</span>
+        </button>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
+      <img id="preview" alt="The photo you chose" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
       <div class="meds" id="meds"></div>
       <button class="quiet" id="addMed" type="button">Add one by hand</button>
       <div class="times" id="times">
@@ -253,7 +260,7 @@ var SLOTS = ["morning", "noon", "evening", "bedtime"];
 var STAGE = [
   { color: "var(--mustard)", cat: "hello", say: function () { return "Hello! I'm Kinly. Who am I going home to?"; } },
   { color: "var(--apricot)", cat: "cozy", say: function () { var n = $("elderName").value.trim(); return n ? "Here's what " + n + " and I will get up to." : "Here's what the two of us will get up to."; } },
-  { color: "var(--rose)", cat: "happy", say: function () { return "Show me her pharmacy bag. I'm a careful reader."; } },
+  { color: "var(--rose)", cat: "happy", say: function () { return "Show me her medicines. I'm a careful reader."; } },
   { color: "var(--sky)", cat: "love", say: function () { return "What should I remember for her?"; } },
   { color: "var(--leaf)", cat: "yay", say: function () { return "I'm ready! Send me to " + her() + "."; } }
 ];
@@ -329,27 +336,31 @@ function shrink(file) {
     img.src = URL.createObjectURL(file);
   });
 }
+var reading = "meds";
+document.querySelectorAll("[data-read]").forEach(function (b) {
+  b.onclick = function () { reading = b.dataset.read; $("file").value = ""; $("file").click(); };
+});
+function addRead(med) {
+  var names = Array.from(document.querySelectorAll(".med input[type=text]")).map(function (i) { return i.value.trim().toLowerCase(); });
+  if (names.indexOf(med.name.trim().toLowerCase()) < 0) medRow(med);
+}
 $("file").onchange = async function () {
   var file = this.files[0];
   if (!file) return;
-  $("shoot").classList.add("busy");
-  $("shootTitle").textContent = "Kinly is reading";
-  $("shootSub").textContent = "A few seconds";
-  say("Let me read this. Small print, hmm.", "cozy");
+  var buttons = document.querySelectorAll("[data-read]");
+  buttons.forEach(function (b) { b.disabled = true; b.classList.toggle("busy", b.dataset.read === reading); });
+  say(reading === "meds" ? "Let me read this. Small print, hmm." : "Let me look closely at these.", "cozy");
   try {
     var data = await shrink(file);
     $("preview").src = data; $("preview").style.display = "block";
-    var res = await fetch("/api/read-meds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: data }) });
+    var res = await fetch(reading === "meds" ? "/api/read-meds" : "/api/read-pills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: data }) });
     var out = await res.json();
-    if (out.meds && out.meds.length) { $("meds").innerHTML = ""; out.meds.forEach(medRow); }
-    say(out.note || "Here's what I read. Fix anything I got wrong.", out.meds && out.meds.length ? "yay" : "worried");
+    (out.meds || []).forEach(addRead);
+    say(out.note || "Here's what I found. Fix anything I got wrong.", out.meds && out.meds.length ? "yay" : "worried");
   } catch (e) {
     say("I couldn't open that photo. Try another, or type them in.", "worried");
   }
-  $("shoot").classList.remove("busy");
-  $("shootTitle").textContent = "Try another photo";
-  $("shootSub").textContent = "Or fix the list below by hand";
-  this.value = "";
+  buttons.forEach(function (b) { b.disabled = false; b.classList.remove("busy"); });
 };
 
 /* Reminders */

@@ -100,3 +100,15 @@ export function softFindPill(name: string): Pill | null {
     : [];
   return only(stamped.length ? stamped : sameBrand);
 }
+
+/** Find a pill by the marking stamped on it, e.g. "GL 500" or "D2 / 850". Null unless exactly one product carries it. */
+export function findByImprint(imprint: string): Pill | null {
+  const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const want = norm(imprint);
+  if (want.length < 3) return null;
+  const hits = rows.filter((r) => {
+    const a = norm(r.標註一 ?? ""), b = norm(r.標註二 ?? "");
+    return want === a + b || want === b + a || (a.length >= 3 && want === a && !b) || (b.length >= 3 && want === b && !a);
+  });
+  return new Set(hits.map((r) => r.英文品名)).size === 1 ? findPill(hits[0].英文品名) : null;
+}
