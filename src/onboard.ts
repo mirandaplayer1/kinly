@@ -100,7 +100,21 @@ export const ONBOARD_PAGE = `<!doctype html>
   .shoot.busy { cursor: progress; border-style: solid; }
   .shoot.busy .ico { animation: peer 1.1s ease-in-out infinite alternate; }
   @keyframes peer { to { transform: translateY(-5px) rotate(-6deg); } }
-  #preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: 16px; margin-top: 14px; display:none; }
+  .result { display:grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items:start; margin-top: 16px; padding: 16px; border-radius: 18px; background: #fff8ea; border: 2px solid var(--ink); }
+  .result[hidden] { display:none; }
+  .result.busy { border-style: dashed; }
+  #preview { width: 96px; height: 96px; object-fit: cover; border-radius: 12px; }
+  .result b { font: 400 22px/1.2 var(--display); display:block; }
+  .result p { margin: 4px 0 0; color: var(--ink-soft); font-size: 16px; }
+  .result ul { list-style:none; margin: 10px 0 0; padding:0; display:grid; gap: 6px; }
+  .result li { display:flex; flex-wrap:wrap; gap: 4px 10px; align-items:baseline; font-weight:700; }
+  .result li small { font-weight:400; color: var(--ink-soft); font-size: 15px; }
+  .tag { font-size: 13px; font-weight:700; padding: 2px 9px; border-radius: 999px; background: var(--leaf); }
+  .tag.same { background: var(--paper-deep); }
+  .listhead { margin-top: 30px; }
+  .listhead[hidden] { display:none; }
+  .med.fresh { animation: fresh 1.6s var(--out); }
+  @keyframes fresh { from { background: #fbe3a4; box-shadow: 0 0 0 10px #fbe3a4; } to { background: transparent; box-shadow: 0 0 0 10px transparent; } }
   .meds { margin-top: 26px; display:grid; gap: 14px; }
   .med { display:grid; gap: 10px; padding-bottom: 16px; border-bottom: 1.5px dashed var(--line); }
   .med .top, .note .top { display:flex; gap: 10px; align-items:center; }
@@ -146,7 +160,7 @@ export const ONBOARD_PAGE = `<!doctype html>
     .aside { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .bubble.swap, .cat.hop, .shoot.busy .ico { animation: none; }
+    .bubble.swap, .cat.hop, .shoot.busy .ico, .med.fresh { animation: none; }
     .stage, .btn, .copy, .paw { transition: none; }
   }
 </style>
@@ -221,7 +235,15 @@ export const ONBOARD_PAGE = `<!doctype html>
         </button>
       </div>
       <input type="file" id="file" accept="image/*" hidden>
-      <img id="preview" alt="The photo you chose" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+      <div class="result" id="result" role="status" aria-live="polite" hidden>
+        <img id="preview" alt="The photo you chose" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+        <div>
+          <b id="resultTitle"></b>
+          <p id="resultNote"></p>
+          <ul id="resultList"></ul>
+        </div>
+      </div>
+      <h2 class="listhead" id="listHead" hidden>Her medicines so far</h2>
       <div class="meds" id="meds"></div>
       <button class="quiet" id="addMed" type="button">Add one by hand</button>
       <div class="times" id="times">
@@ -315,8 +337,9 @@ function medRow(med) {
     SLOTS.map(function (s) { return '<label class="chip"><input type="checkbox" value="' + s + '"><span>' + s.charAt(0).toUpperCase() + s.slice(1) + '</span></label>'; }).join("") + '</div>';
   el.querySelector("input[type=text]").value = med.name;
   el.querySelectorAll(".chip input").forEach(function (c) { c.checked = med.slots.indexOf(c.value) >= 0; c.onchange = syncTimes; });
-  el.querySelector(".rm").onclick = function () { el.remove(); syncTimes(); };
+  el.querySelector(".rm").onclick = function () { el.remove(); $("listHead").hidden = $("meds").children.length === 0; syncTimes(); };
   $("meds").appendChild(el);
+  $("listHead").hidden = false;
   syncTimes();
   return el;
 }
@@ -340,9 +363,31 @@ var reading = "meds";
 document.querySelectorAll("[data-read]").forEach(function (b) {
   b.onclick = function () { reading = b.dataset.read; $("file").value = ""; $("file").click(); };
 });
+// Add what Kinly read to the list. Returns true when it was new, false when it was already there.
 function addRead(med) {
-  var names = Array.from(document.querySelectorAll(".med input[type=text]")).map(function (i) { return i.value.trim().toLowerCase(); });
-  if (names.indexOf(med.name.trim().toLowerCase()) < 0) medRow(med);
+  var want = med.name.trim().toLowerCase();
+  var rows = Array.from(document.querySelectorAll(".med"));
+  var had = rows.filter(function (r) { return r.querySelector("input[type=text]").value.trim().toLowerCase() === want; })[0];
+  var row = had || medRow(med);
+  row.classList.remove("fresh"); void row.offsetWidth; row.classList.add("fresh");
+  return !had;
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function showResult(state, title, note, items) {
+  var r = $("result");
+  r.hidden = false;
+  r.classList.toggle("busy", state === "busy");
+  $("resultTitle").textContent = title;
+  $("resultNote").textContent = note || "";
+  var ul = $("resultList"); ul.innerHTML = "";
+  (items || []).forEach(function (it) {
+    var li = document.createElement("li");
+    var name = document.createElement("span"); name.textContent = it.name; li.appendChild(name);
+    var when = document.createElement("small"); when.textContent = it.slots.map(cap).join(", "); li.appendChild(when);
+    var tag = document.createElement("span"); tag.className = "tag" + (it.added ? "" : " same"); tag.textContent = it.added ? "Added" : "Already in her list"; li.appendChild(tag);
+    ul.appendChild(li);
+  });
+  r.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 $("file").onchange = async function () {
   var file = this.files[0];
@@ -352,12 +397,17 @@ $("file").onchange = async function () {
   say(reading === "meds" ? "Let me read this. Small print, hmm." : "Let me look closely at these.", "cozy");
   try {
     var data = await shrink(file);
-    $("preview").src = data; $("preview").style.display = "block";
+    $("preview").src = data;
+    showResult("busy", "Kinly is reading your photo", "This takes about ten seconds.");
     var res = await fetch(reading === "meds" ? "/api/read-meds" : "/api/read-pills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: data }) });
     var out = await res.json();
-    (out.meds || []).forEach(addRead);
-    say(out.note || "Here's what I found. Fix anything I got wrong.", out.meds && out.meds.length ? "yay" : "worried");
+    var meds = out.meds || [];
+    var items = meds.map(function (m) { return { name: m.name, slots: m.slots, added: addRead(m) }; });
+    var title = meds.length === 0 ? "Kinly found no medicine in this photo" : "Kinly read " + meds.length + (meds.length === 1 ? " medicine" : " medicines") + " from this photo";
+    showResult("done", title, out.note, items);
+    say(out.note || "Here's what I found. Fix anything I got wrong.", meds.length ? "yay" : "worried");
   } catch (e) {
+    showResult("done", "Kinly couldn't open that photo", "Try another photo, or add the medicine by hand below.");
     say("I couldn't open that photo. Try another, or type them in.", "worried");
   }
   buttons.forEach(function (b) { b.disabled = false; b.classList.remove("busy"); });
