@@ -4,7 +4,7 @@ import { getProfile, getState, saveState, today, SLOTS, type Profile } from "./p
 
 export type Mission = {
   id: string; // e.g. "meds_morning"
-  kind: "meds" | "meal" | "activity" | "journal";
+  kind: "meds" | "measure" | "meal" | "activity" | "journal";
   title: string; // for the family page
   time: string; // "HH:MM"
   ask: string; // what Kinly is after, told to the model
@@ -23,6 +23,19 @@ export function todaysMissions(p: Profile = getProfile()): Mission[] {
         title: `${slot[0].toUpperCase()}${slot.slice(1)} pills`,
         time: t.meds.times[slot],
         ask: `Her ${slot} pills: ${pills.join(", ")}. Ask her to show you the pills in her hand, or the bottles, in a photo or a short video.`,
+      });
+    }
+  }
+  for (const [what, slots] of [["glucose", t.measure.glucose], ["pressure", t.measure.pressure]] as const) {
+    const name = what === "glucose" ? "blood sugar" : "blood pressure";
+    for (const slot of SLOTS) {
+      if (!slots.includes(slot)) continue;
+      out.push({
+        id: `${what}_${slot}`,
+        kind: "measure",
+        title: `${name[0].toUpperCase()}${name.slice(1)}, ${slot}`,
+        time: t.meds.times[slot],
+        ask: `Her ${slot} ${name} reading. Ask her to measure and send you a photo of the meter; you will read the number for her.`,
       });
     }
   }

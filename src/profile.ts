@@ -13,6 +13,7 @@ export type Profile = {
     activity: { on: boolean; time: string; what: string };
     meals: { on: boolean; breakfast: string; lunch: string; dinner: string };
     meds: { on: boolean; list: { name: string; slots: Slot[] }[]; times: Record<Slot, string> };
+    measure: { glucose: Slot[]; pressure: Slot[] }; // when Kinly asks for a reading; empty means never
     remember: { on: boolean };
     journal: { on: boolean; time: string };
   };
@@ -33,6 +34,7 @@ export const DEFAULT_PROFILE: Profile = {
       ],
       times: { morning: "08:00", noon: "12:00", evening: "18:00", bedtime: "21:30" },
     },
+    measure: { glucose: [], pressure: [] },
     remember: { on: true },
     journal: { on: true, time: "20:30" },
   },
@@ -66,6 +68,7 @@ export const today = (d = new Date()) =>
 export const clock = (d = new Date()) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
 let profile = read<Profile>("profile.json");
+if (profile && !profile.tasks.measure) profile.tasks.measure = { glucose: [], pressure: [] }; // saved before measurements existed
 export const onboarded = () => profile !== null;
 export const getProfile = (): Profile => profile ?? DEFAULT_PROFILE;
 export function saveProfile(p: Profile) {

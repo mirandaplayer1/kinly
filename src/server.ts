@@ -233,6 +233,7 @@ type Setup = {
   familyName: string;
   about?: string;
   meds?: { list: Profile["tasks"]["meds"]["list"]; times: Profile["tasks"]["meds"]["times"] };
+  measure?: Profile["tasks"]["measure"];
   reminders?: { note: string; at: string }[];
 };
 app.post("/api/profile", (req, res) => {
@@ -243,6 +244,7 @@ app.post("/api/profile", (req, res) => {
   p.familyName = b.familyName.trim();
   p.about = (b.about ?? "").trim();
   if (b.meds) p.tasks.meds = { on: true, list: b.meds.list.filter((m) => m.name.trim() && m.slots.length), times: b.meds.times };
+  if (b.measure) p.tasks.measure = { glucose: b.measure.glucose ?? [], pressure: b.measure.pressure ?? [] };
   saveProfile(p);
   const s = getState();
   s.memories = s.memories.filter((m) => m.told || !m.remindAt || !m.note.startsWith("[from family] "));

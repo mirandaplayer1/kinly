@@ -122,6 +122,8 @@ export const ONBOARD_PAGE = `<!doctype html>
   .tag { font-size: 13px; font-weight:700; padding: 2px 9px; border-radius: 999px; background: var(--leaf); }
   .tag.same { background: var(--paper-deep); }
   .listhead { margin-top: 30px; }
+  .hint { margin: 2px 0 14px; color: var(--ink-soft); font-size: 16px; }
+  .mname { font: 700 19px/1.3 var(--body); }
   .listhead[hidden] { display:none; }
   .med.fresh { animation: fresh 1.6s var(--out); }
   @keyframes fresh { from { background: #fbe3a4; box-shadow: 0 0 0 10px #fbe3a4; } to { background: transparent; box-shadow: 0 0 0 10px transparent; } }
@@ -185,6 +187,7 @@ export const ONBOARD_PAGE = `<!doctype html>
     <symbol id="i-photo" viewBox="0 0 44 44"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="5" width="28" height="34" rx="3"/><rect x="12" y="9" width="20" height="18" rx="1.5"/><path d="M12 23l6-6 5 5 3-3 6 6"/><path d="M16 33h12"/></g></symbol>
     <symbol id="i-pill" viewBox="0 0 44 44"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="15" width="34" height="14" rx="7" transform="rotate(-35 22 22)"/><path d="M18 14l8 16"/><path d="M33 8l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></g></symbol>
     <symbol id="i-knot" viewBox="0 0 44 44"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 38V20"/><path d="M22 20c-9-1-12-12-4-13 5-1 6 6 4 13zM22 20c9-1 12-12 4-13-5-1-6 6-4 13z"/><path d="M22 20l-8 9M22 20l8 9"/></g></symbol>
+    <symbol id="i-drop" viewBox="0 0 44 44"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6c7 9 11 14 11 20a11 11 0 0 1-22 0c0-6 4-11 11-20z"/><path d="M16 27h4l2-5 3 9 2-4h3"/></g></symbol>
     <symbol id="i-cam" viewBox="0 0 56 56"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h9l4-6h14l4 6h9v26H8z"/><circle cx="28" cy="30" r="8"/><path d="M41 24h2"/></g></symbol>
   </defs>
 </svg>
@@ -224,6 +227,7 @@ export const ONBOARD_PAGE = `<!doctype html>
         <h2>Reminders, which you can set for her</h2>
         <ul class="day">
           <li><svg class="ico"><use href="#i-pill"/></svg><div><b>Medication</b><p>Kinly nudges at the right time, and looks at the pills with her if she's unsure.</p></div></li>
+          <li><svg class="ico"><use href="#i-drop"/></svg><div><b>Blood sugar and blood pressure</b><p>Kinly asks for a photo of the meter and reads the number for her.</p></div></li>
           <li><svg class="ico"><use href="#i-knot"/></svg><div><b>Remember this for me</b><p>Appointments, birthdays, the plumber on Tuesday.</p></div></li>
         </ul>
       </div>
@@ -231,7 +235,7 @@ export const ONBOARD_PAGE = `<!doctype html>
     </section>
 
     <section class="step" data-step="2" hidden>
-      <h1>Her medicines</h1>
+      <h1>Her medicines and readings</h1>
       <p class="lede">Show Kinly the label, the pills, or both. It reads what it can, and you fix anything it got wrong.</p>
       <div class="shots" id="shots">
         <button type="button" class="shoot" data-read="meds">
@@ -258,6 +262,12 @@ export const ONBOARD_PAGE = `<!doctype html>
       <h2 class="listhead" id="listHead" hidden>Her medicines so far</h2>
       <div class="meds" id="meds"></div>
       <button class="quiet" id="addMed" type="button">Add one by hand</button>
+      <h2 class="listhead">Does she measure anything?</h2>
+      <p class="hint">Pick when Kinly should ask. Leave them empty and Kinly won't.</p>
+      <div class="meds" id="measures">
+        <div class="med" data-measure="glucose"><b class="mname">Blood sugar</b><div class="chips"></div></div>
+        <div class="med" data-measure="pressure"><b class="mname">Blood pressure</b><div class="chips"></div></div>
+      </div>
       <div class="times" id="times">
         <label data-slot="morning">Morning is<input type="time" id="t_morning"></label>
         <label data-slot="noon">Noon is<input type="time" id="t_noon"></label>
@@ -337,7 +347,7 @@ function go(n, quiet) {
 /* Medicines */
 function syncTimes() {
   var used = {};
-  document.querySelectorAll("#meds .chip input:checked").forEach(function (c) { used[c.value] = true; });
+  document.querySelectorAll("#meds .chip input:checked, #measures .chip input:checked").forEach(function (c) { used[c.value] = true; });
   var any = false;
   document.querySelectorAll("#times label").forEach(function (l) { l.hidden = !used[l.dataset.slot]; if (used[l.dataset.slot]) any = true; });
   $("times").style.display = any ? "" : "none";
@@ -354,6 +364,13 @@ function medRow(med) {
   $("listHead").hidden = false;
   syncTimes();
   return el;
+}
+document.querySelectorAll("[data-measure] .chips").forEach(function (box) {
+  box.innerHTML = SLOTS.map(function (s) { return '<label class="chip"><input type="checkbox" value="' + s + '"><span>' + s.charAt(0).toUpperCase() + s.slice(1) + '</span></label>'; }).join("");
+  box.querySelectorAll("input").forEach(function (c) { c.onchange = syncTimes; });
+});
+function measureSlots(what) {
+  return Array.from(document.querySelectorAll('[data-measure="' + what + '"] .chip input:checked')).map(function (c) { return c.value; });
 }
 $("addMed").onclick = function () { medRow({ name: "", slots: ["morning"] }).querySelector("input").focus(); };
 
@@ -378,7 +395,7 @@ document.querySelectorAll("[data-read]").forEach(function (b) {
 // Add what Kinly read to the list. Returns true when it was new, false when it was already there.
 function addRead(med) {
   var want = med.name.trim().toLowerCase();
-  var rows = Array.from(document.querySelectorAll(".med"));
+  var rows = Array.from(document.querySelectorAll("#meds .med"));
   var had = rows.filter(function (r) { return r.querySelector("input[type=text]").value.trim().toLowerCase() === want; })[0];
   var row = had || medRow(med);
   row.classList.remove("fresh"); void row.offsetWidth; row.classList.add("fresh");
@@ -461,11 +478,12 @@ function collect() {
   return {
     elderName: $("elderName").value.trim(), familyName: $("familyName").value.trim(), about: $("about").value.trim(),
     meds: {
-      list: Array.from(document.querySelectorAll(".med")).map(function (el) {
+      list: Array.from(document.querySelectorAll("#meds .med")).map(function (el) {
         return { name: el.querySelector("input[type=text]").value.trim(), slots: Array.from(el.querySelectorAll(".chip input:checked")).map(function (c) { return c.value; }) };
       }).filter(function (m) { return m.name; }),
       times: times
     },
+    measure: { glucose: measureSlots("glucose"), pressure: measureSlots("pressure") },
     reminders: Array.from(document.querySelectorAll(".note")).map(function (el) {
       return { note: el.querySelector("input[type=text]").value.trim(), at: el.querySelector("input[type=datetime-local]").value };
     }).filter(function (r) { return r.note; })
@@ -522,6 +540,9 @@ fetch("/api/profile").then(function (r) { return r.json(); }).then(function (out
   if (out.onboarded) p.tasks.meds.list.forEach(medRow);
   SLOTS.forEach(function (s) { $("t_" + s).value = p.tasks.meds.times[s]; });
   (out.reminders || []).forEach(noteRow);
+  ["glucose", "pressure"].forEach(function (what) {
+    document.querySelectorAll('[data-measure="' + what + '"] .chip input').forEach(function (c) { c.checked = out.onboarded && (p.tasks.measure[what] || []).indexOf(c.value) >= 0; });
+  });
   syncTimes();
   if (out.onboarded) showLinks(out);
   var open = Number(location.hash.slice(1)) || 0;
