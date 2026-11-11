@@ -79,5 +79,11 @@ export function softFindPill(name: string): Pill | null {
     rows.find((r) => r.英文品名?.toUpperCase() === want) ??
     rows.find((r) => r.英文品名?.toUpperCase().startsWith(want)) ??
     rows.find((r) => r.英文品名?.toUpperCase().includes(want));
-  return row ? findPill(row.英文品名) : null;
+  if (row) return findPill(row.英文品名);
+  // A label says "NORVASC 5 MG TABLET"; the dataset says "NORVASC TABLETS 5MG". Match the brand, then the strength.
+  const [brand, ...rest] = want.split(/\s+/);
+  const strength = rest.join("").match(/\d+(?:\.\d+)?MG/)?.[0];
+  const sameBrand = rows.filter((r) => r.英文品名?.toUpperCase().split(/[\s"]+/)[0] === brand);
+  const best = (strength && sameBrand.find((r) => r.英文品名.toUpperCase().replace(/\s+/g, "").includes(strength))) || sameBrand[0];
+  return best ? findPill(best.英文品名) : null;
 }

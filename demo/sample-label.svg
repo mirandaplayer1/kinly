@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1560" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1200" height="1560" fill="#e9e4da"/>
+  <g id="label1" transform="translate(70 70)">
+    <rect width="1060" height="660" rx="10" fill="#fff" stroke="#b9b2a4" stroke-width="2"/>
+    <rect width="1060" height="96" rx="10" fill="#1f5a8a"/><rect y="60" width="1060" height="36" fill="#1f5a8a"/>
+    <text x="36" y="46" font-size="34" font-weight="700" fill="#fff">MAPLE STREET PHARMACY</text>
+    <text x="36" y="80" font-size="20" fill="#dbe8f3">214 Maple Street, Springfield, CA 90000   ·   (555) 010-0142</text>
+    <text x="36" y="150" font-size="24" fill="#333">Rx# 7204418</text>
+    <text x="1024" y="150" font-size="24" fill="#333" text-anchor="end">Dr. A. RIVERA</text>
+    <text x="36" y="212" font-size="40" font-weight="700" fill="#111">MARGARET LIN</text>
+    <text x="36" y="290" font-size="40" font-weight="700" fill="#111">TAKE 1 TABLET BY MOUTH ONCE DAILY</text>
+    <text x="36" y="340" font-size="40" font-weight="700" fill="#111">IN THE MORNING</text>
+    <line x1="36" y1="376" x2="1024" y2="376" stroke="#999" stroke-width="2"/>
+    <text x="36" y="436" font-size="46" font-weight="700" fill="#111">NORVASC 5 MG TABLET</text>
+    <text x="36" y="478" font-size="24" fill="#333">Generic: amlodipine besylate   ·   For blood pressure</text>
+    <text x="36" y="540" font-size="24" fill="#333">QTY: 30      REFILLS: 5 before 05/10/2027</text>
+    <text x="36" y="578" font-size="24" fill="#333">Filled: 11/02/2026      Discard after: 11/02/2027</text>
+    <text x="36" y="626" font-size="22" fill="#555">White, eight-sided tablet marked AML 5</text>
+    <rect x="760" y="506" width="264" height="120" rx="8" fill="#fde9a9" stroke="#c79a1d" stroke-width="2"/>
+    <text x="892" y="556" font-size="22" font-weight="700" fill="#5b4300" text-anchor="middle">MAY CAUSE</text>
+    <text x="892" y="586" font-size="22" font-weight="700" fill="#5b4300" text-anchor="middle">DIZZINESS</text>
+  </g>
+  <g id="label2" transform="translate(70 800)">
+    <rect width="1060" height="690" rx="10" fill="#fff" stroke="#b9b2a4" stroke-width="2"/>
+    <rect width="1060" height="96" rx="10" fill="#1f5a8a"/><rect y="60" width="1060" height="36" fill="#1f5a8a"/>
+    <text x="36" y="46" font-size="34" font-weight="700" fill="#fff">MAPLE STREET PHARMACY</text>
+    <text x="36" y="80" font-size="20" fill="#dbe8f3">214 Maple Street, Springfield, CA 90000   ·   (555) 010-0142</text>
+    <text x="36" y="150" font-size="24" fill="#333">Rx# 7204419</text>
+    <text x="1024" y="150" font-size="24" fill="#333" text-anchor="end">Dr. A. RIVERA</text>
+    <text x="36" y="212" font-size="40" font-weight="700" fill="#111">MARGARET LIN</text>
+    <text x="36" y="290" font-size="40" font-weight="700" fill="#111">TAKE 1 TABLET BY MOUTH TWICE DAILY</text>
+    <text x="36" y="340" font-size="40" font-weight="700" fill="#111">WITH BREAKFAST AND DINNER</text>
+    <line x1="36" y1="376" x2="1024" y2="376" stroke="#999" stroke-width="2"/>
+    <text x="36" y="436" font-size="46" font-weight="700" fill="#111">GLUCOPHAGE 500 MG TABLET</text>
+    <text x="36" y="478" font-size="24" fill="#333">Generic: metformin HCl   ·   For blood sugar</text>
+    <text x="36" y="540" font-size="24" fill="#333">QTY: 60      REFILLS: 5 before 05/10/2027</text>
+    <text x="36" y="578" font-size="24" fill="#333">Filled: 11/02/2026      Discard after: 11/02/2027</text>
+    <text x="36" y="626" font-size="22" fill="#555">White, round tablet marked GL 500</text>
+    <rect x="760" y="506" width="264" height="120" rx="8" fill="#cfe8d2" stroke="#3d8a48" stroke-width="2"/>
+    <text x="892" y="556" font-size="22" font-weight="700" fill="#1e4d25" text-anchor="middle">TAKE WITH</text>
+    <text x="892" y="586" font-size="22" font-weight="700" fill="#1e4d25" text-anchor="middle">FOOD</text>
+    <text x="36" y="668" font-size="18" fill="#888">Sample label for the Kinly demo. Not a real prescription; names and numbers are made up.</text>
+  </g>
+</svg>
