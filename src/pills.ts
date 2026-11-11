@@ -1,4 +1,5 @@
 // Pill appearance lookup from the Taiwan FDA open dataset (med/42_5.json).
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 type PillRow = {
@@ -44,6 +45,11 @@ export async function referencePhoto(pill: Pill): Promise<{ data: string; mediaT
       buf = Buffer.from(await res.arrayBuffer());
       mkdirSync("med/ref", { recursive: true });
       writeFileSync(file, buf);
+      // Originals can be 16 MB. Keep a small JPEG instead (sips ships with macOS; skipped elsewhere).
+      try {
+        execFileSync("sips", ["-Z", "800", "-s", "format", "jpeg", "-s", "formatOptions", "80", file, "--out", file], { stdio: "ignore" });
+        buf = readFileSync(file);
+      } catch {}
     }
     const mediaType = buf[0] === 0xff ? "image/jpeg" : "image/png";
     const out = { data: buf.toString("base64"), mediaType } as const;

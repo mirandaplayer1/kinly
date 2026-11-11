@@ -1,0 +1,102 @@
+[
+  {
+    "label": "喉片",
+    "name": "SUCIN TROCHES",
+    "zh": "舒清喉錠",
+    "color": "黃",
+    "shape": "圓形",
+    "imprint": "SPC 831",
+    "note": "stand-in: the label only says 喉片 (lozenge), brand unknown",
+    "file": "pills/喉片.jpg"
+  },
+  {
+    "label": "CEFLOUR 250mg",
+    "name": "CEFLOUR FILM COATED TABLETS 250MG",
+    "zh": "喜華 膜衣錠２５０公絲",
+    "color": "白",
+    "shape": "橢圓形",
+    "imprint": "YSP39",
+    "note": "",
+    "file": "pills/CEFLOUR_250mg.jpg"
+  },
+  {
+    "label": "allegra 60mg",
+    "name": "ALLEGRA 60MG TABLETS",
+    "zh": "艾來６０公絲錠劑",
+    "color": "粉",
+    "shape": "橢圓形",
+    "imprint": "06",
+    "note": "",
+    "file": "pills/allegra_60mg.jpg"
+  },
+  {
+    "label": "化痰粉 ACTEIN 200mg",
+    "name": "ACTEIN GRANULES 66.7MG/GM",
+    "zh": "愛克痰顆粒６６．７毫克/公克",
+    "color": "橘",
+    "shape": "顆粒劑、粉劑或散劑",
+    "imprint": "",
+    "note": "granules; 66.7 mg/g x 3 g sachet = 200 mg",
+    "file": "pills/化痰粉_ACTEIN_200mg.jpg"
+  },
+  {
+    "label": "soma 250/150",
+    "name": "SOMA CAPSULES \"STANDARD\"",
+    "zh": "\"生達\" 舒肌痛膠囊",
+    "color": "黑",
+    "shape": "膠囊",
+    "imprint": "STD 511 / STD 511",
+    "note": "",
+    "file": "pills/soma_250_150.jpg"
+  },
+  {
+    "label": "transamin 250mg",
+    "name": "TRANSAMIN CAPSULES",
+    "zh": "斷血炎膠囊",
+    "color": "橘",
+    "shape": "膠囊",
+    "imprint": "",
+    "note": "",
+    "file": "pills/transamin_250mg.jpg"
+  },
+  {
+    "label": "Lanpo 15mg",
+    "name": "Lanpo Capsules 15mg \"EVEREST\"",
+    "zh": "永勝佳胃膠囊15毫克",
+    "color": "白",
+    "shape": "膠囊",
+    "imprint": "EP214",
+    "note": "",
+    "file": "pills/Lanpo_15mg.jpg"
+  },
+  {
+    "label": "CLATINE TABLET 10MG",
+    "name": "CLATINE TABLET 10MG  \"STANDARD\"(LORATADINE)",
+    "zh": "\"生達\" 宜敏靜錠１０公絲（樂雷塔定）",
+    "color": "白",
+    "shape": "橢圓形",
+    "imprint": "TC 18 / STD",
+    "note": "",
+    "file": "pills/CLATINE_TABLET_10MG.jpg"
+  },
+  {
+    "label": "cornin",
+    "name": "CORNIN CAPSULES \"ROYAL\"",
+    "zh": "\"皇佳\"鎮嗽寧膠囊",
+    "color": "紫",
+    "shape": "膠囊",
+    "imprint": "",
+    "note": "",
+    "file": "pills/cornin.jpg"
+  },
+  {
+    "label": "TELIN 200mg",
+    "name": "Theophy S.R. Tablets 200mg \"P.L.\"",
+    "zh": "\"培力\"息喘寧緩釋錠200毫克",
+    "color": "白",
+    "shape": "橢圓形",
+    "imprint": "PL / T65",
+    "note": "stand-in: TELIN is not in the dataset; this is another 200 mg tablet, for the demo only",
+    "file": "pills/TELIN_200mg.jpg"
+  }
+]
