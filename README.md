@@ -1,34 +1,41 @@
 # Kinly
 
-**The daily "did you take your pills?" call, made by an AI that can actually see the pills.**
+**The family member who's always home.**
 
-Every day, millions of adult children phone a parent who lives alone and ask one question. The parent says yes. Nobody knows if it's true.
+Kinly is an AI companion for an older adult living alone, and the one member of her care circle who is always around. She talks to it in WhatsApp, or opens the camera and shows it things. Her daughter and her care team message the same Kinly. Kinly keeps one picture of her day and makes sure the right person knows what matters.
 
-Kinly is a care companion that lives in WhatsApp. Mom sends a photo of the pills in her hand, her glucose meter, her breakfast. Kinly looks, answers her like a person would, and keeps the family in the loop. When something is off, it brings in a human within seconds.
-
-## Why this is a real problem
+## The problem
 
 - 43% of Americans 65+ take five or more prescription drugs ([CDC](https://www.cdc.gov/nchs/hus/topics/rx-drug-use.htm)).
 - 53 million family members already do this care work unpaid (YC, *AI for the Aging Population*).
-- What families told us, in their own words: they call every day to check, it is exhausting, and it is unreliable. See [`idea/PAIN_elder-medication.md`](idea/PAIN_elder-medication.md).
+- In the words of the families we read ([`idea/PAIN_elder-medication.md`](idea/PAIN_elder-medication.md)): they call every day to check, it is exhausting, and it is unreliable. Several doctors, a daughter in another city, a care manager with forty clients, and nobody holds the whole picture.
 
-A pill reminder knows the time. It doesn't know she skipped breakfast, that her sugar was low an hour ago, or that the pill in her hand is the wrong one. Harm happens in the combination, and only something that sees the whole day can catch it.
+Today's answers are reminders that nag and cameras that watch. One is ignored, the other is resented.
+
+## Company, not surveillance
+
+Three rules shape the product:
+
+1. **She opens the camera.** Like video-calling a grandchild: "Kinly, is this the right one?" Kinly never watches on its own.
+2. **Nothing behind her back.** Whenever Kinly passes something on, it tells her.
+3. **Messages go both ways.** Her family's love and news reach her through Kinly, and hers reach them.
 
 ## What it does today
 
-1. **Sees the pills.** Compares her photo with the schedule and with reference images of each pill (shape, color, imprint).
-2. **Reads the meters.** Blood sugar and blood pressure, straight from a photo. No Bluetooth, no new device.
-3. **Remembers the day.** Meals, readings and doses are judged together, as one picture.
-4. **Brings in humans.** Green: Kinly handles it. Yellow: the family gets a heads-up. Red: someone is told to check on her now.
-5. **Family page.** One live timeline of Mom's day, with her photos, at `/family`.
+| Who | With Kinly |
+|---|---|
+| **Mom** | Kinly says good morning first. She sends a photo or opens **Show Kinly** (`/see`), holds up a bottle and asks out loud; Kinly answers out loud. Pills, meters, meals, a drawing, or just a chat. |
+| **Daughter** | Texts Kinly "how's Mom today?" and gets a real answer from the day's log. Sends love or a question; Kinly carries it to Mom and brings the answer back. |
+| **Care team** | Hears only what needs a professional: a red reading, a dose question. Can send a change; Kinly explains it to her. |
+| **Everyone** | A red moment: Kinly phones her, talks with her, and tells family and care team how she sounded. One live page of her day at `/family`. |
 
-Kinly compares, reminds and escalates. It never diagnoses and never changes a dose.
+Kinly compares, reminds and connects people. It never diagnoses and never changes a dose.
 
 ## Where this goes
 
-The photo is the first sensor. Next is a phone call for elders who don't text, then first-person video from smart glasses: "is this the right one?" answered while the pill is still in her hand.
+The phone camera is a stand-in. The same companion moves into smart glasses and sees what she sees, and it helps the aide and the spouse as well as her.
 
-Every check-in also builds something no clinic has: a daily, first-person record of how one person is aging. That record is what lets one care manager look after hundreds of people, and what lets Kinly notice the slow changes a yearly appointment misses.
+Every day with Kinly also builds something no clinic has: a first-person record of how one person is aging, shared with her consent. That is how one care manager looks after hundreds of people, and how slow changes get noticed years before a yearly appointment would catch them.
 
 Medicare already pays clinics each month to monitor and check in on seniors. Clinics don't have the staff. Kinly does the work.
 
@@ -37,17 +44,22 @@ Medicare already pays clinics each month to monitor and check in on seniors. Cli
 ```bash
 pnpm install
 cp .env.example .env      # fill in your Anthropic and Twilio values
-pnpm dev                  # http://localhost:3000/family
-ngrok http 3000           # paste <ngrok-url>/whatsapp into the Twilio WhatsApp sandbox
+pnpm dev                  # http://localhost:3000
+ngrok http 3000           # paste <ngrok-url>/whatsapp into the Twilio WhatsApp sandbox; set PUBLIC_URL
 ```
+
+- `/see`: Show Kinly (open on her phone)
+- `/family`: her day, live
+- `/hello`: Kinly sends her the first message
+- One phone can play every part: start a message with `family:` or `care:`.
 
 ## How it's built
 
 | Piece | Choice |
 |---|---|
-| Channel | WhatsApp via Twilio |
-| Brain | Claude, one call per message with structured output: reply, family log line, level |
+| Channels | WhatsApp and voice calls via Twilio; a camera page in the phone browser |
+| Brain | Claude, structured output per turn: reply, log line, level, who to tell ([`src/agent.ts`](src/agent.ts)) |
 | Pill references | Taiwan FDA open pill-appearance data, 6,374 pills with photos ([`med/`](med/)) |
-| Server | Node, TypeScript, Express ([`src/`](src/)) |
+| Server | Node, TypeScript, Express ([`src/server.ts`](src/server.ts)) |
 
-Built in a day for a YC hackathon.
+Built for a YC hackathon.

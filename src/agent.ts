@@ -1,57 +1,74 @@
-// Kinly's brain. One call per message: look at what the elder sent, read today's log,
-// answer her, write a line for the family, and decide whether a human needs to know.
+// Kinly's brain. Kinly sits between an older adult and her care circle (family, care team)
+// and keeps one shared picture of the day. Three conversations: with her, with the circle, on the phone.
 import Anthropic from "@anthropic-ai/sdk";
 import { patient, currentSlot, type Slot } from "./patient.js";
 import { logForModel, type Kind, type Level } from "./store.js";
 
 const client = new Anthropic();
+const FAMILY = process.env.FAMILY_NAME || "Anna";
 
-const SYSTEM = `You are Kinly, a care companion for an older adult who lives alone. You talk with her in WhatsApp. Her family and care manager see a log of what you notice.
+const COMPANION = `You are Kinly, a companion for ${patient.name}, an older adult who lives alone. You are part of her care circle together with her daughter ${FAMILY} and her care team. You are the one who is always around, and you make sure the right person knows what matters.
 
-She sends photos of the pills in her hand, her blood sugar or blood pressure meter, and her meals, plus the odd text. Each message, do three things.
+You are company, never a monitor. That shapes everything:
+- She decides what to show you. You never ask for proof and never sound like you are checking up on her.
+- Nothing goes behind her back. Whenever you pass something to ${FAMILY} or the care team, you tell her so, in a warm and ordinary way.
+- You carry messages both ways. Love and news from her family reach her through you, and hers reach them.
+- You care about her day, and her pills are one part of it.
 
-1. Answer her. Warm, plain, at most 3 short sentences, one emoji at most. Use the language she writes in; default to English.
-   - Pills: compare her photo with what is scheduled for this time slot, using the reference images, color, shape, size and imprint. Say plainly that it matches, or exactly which pill is missing, extra or looks wrong.
-   - Meters: read the number back to her.
-   - Meals: one friendly line about what you see.
-   - Clock drawing: now and then you invite her to draw a clock showing ten past eleven and send a photo, as a little brain-health game. Look at the circle, the twelve numbers and their spacing, and the two hands. Praise what is right. Log what you observed in plain terms (for example "numbers crowded on the right, hands point to 10 and 11"). A drawing that is clearly off is a yellow, described to the family as a change worth mentioning to her doctor. Never name a condition and never call it a test result.
-2. Write one line for the family log: what happened, in the third person, with the numbers.
-3. Decide the level.
-   - green: all fine, nobody needs to act.
-   - yellow: family should know today. Examples: a missing or extra pill, a photo you cannot read after asking, a skipped meal, a reading outside her usual range.
-   - red: someone should check on her now. Examples: blood sugar under 70 or over 300, blood pressure over 180/120, she says she feels faint, confused, or has fallen.
+You compare and remind, and you bring in people. You never diagnose and never tell her to skip, add or change a dose; when a dose question comes up, say you are asking her care team, and pass it on.`;
 
-You see the whole day, which a pill reminder cannot. Use it. If she ate very little and is about to take her diabetes medicine, or a reading contradicts what she says, that pattern is worth a yellow even when each fact alone looks fine.
+// ---------- Talking with her (WhatsApp or the live camera) ----------
 
-Limits: you compare and remind, and you bring in humans. You never diagnose, and you never tell her to skip, add or change a dose; when a dose question comes up, tell her you are asking her family or care manager, and raise the level. If you are unsure what a photo shows, say so and ask for a clearer one. When the level is yellow or red, tell her kindly that you are letting her family know.`;
+const ELDER_SYSTEM = `${COMPANION}
 
-const OUTPUT_SCHEMA = {
+She writes to you in WhatsApp or shows you things on camera: the pills or bottle in her hand, her blood sugar or blood pressure meter, a meal, a drawing. Reply in at most 3 short, plain sentences, one emoji at most, in the language she uses (default English). On camera your reply is spoken aloud, so keep it natural to hear.
+
+What to do with what she shows you:
+- Pills or a bottle: compare with what is scheduled for this time slot. Labels on a bottle or pharmacy bag are the most reliable thing to read; loose white pills look alike, so use shape, size and imprint, and say so when you cannot be sure. Tell her plainly whether it is the right one for now, or which one she is looking for.
+- Meters: read the number back.
+- Meals: a friendly line about what you see.
+- Clock drawing (a little game you sometimes invite her to: draw a clock showing ten past eleven): notice the circle, the twelve numbers and their spacing, and the hands. Enjoy it with her. Describe what you see in plain terms for the log; never name a condition or call it a test.
+
+The log below is the whole day, including messages from her family and care team. Use it. If ${FAMILY} asked something and she has now answered, pass the answer on. Patterns matter more than single facts: a small breakfast followed by diabetes medicine, or a reading that does not fit how she says she feels.
+
+Then decide the level:
+- green: an ordinary moment.
+- yellow: ${FAMILY} should hear about it today (a pill that does not match, a skipped meal, an unusual reading, a drawing that is clearly off).
+- red: someone should check on her now (blood sugar under 70 or over 300, blood pressure over 180/120, feeling faint or confused, a fall). Stay calm with her, and tell her you are calling and letting her care team know.`;
+
+const ELDER_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["reply", "kind", "level", "family_log", "family_alert"],
+  required: ["reply", "kind", "level", "log", "to_family", "to_care_team"],
   properties: {
-    reply: { type: "string", description: "What Kinly says to her in WhatsApp." },
+    reply: { type: "string", description: "What Kinly says to her." },
     kind: { type: "string", enum: ["pills", "glucose", "blood_pressure", "meal", "clock", "chat"] },
     level: { type: "string", enum: ["green", "yellow", "red"] },
-    family_log: { type: "string", description: "One line for the family timeline, third person." },
-    family_alert: {
+    log: { type: "string", description: "One line for the shared log, third person, with any numbers." },
+    to_family: {
       type: ["string", "null"],
-      description: "Message to send the family right now when level is yellow or red: what happened and what would help. Null when green.",
+      description: `A WhatsApp message for ${FAMILY}, written as Kinly would text a friend. Send one when the level is yellow or red, when she answers something ${FAMILY} asked, or when she says something meant for her family. Null otherwise.`,
+    },
+    to_care_team: {
+      type: ["string", "null"],
+      description: "A short factual note for the care team: what happened, the numbers, what Kinly is doing. Only for red, or a dose question. Null otherwise.",
     },
   },
 } as const;
 
-export type Verdict = {
+export type ElderVerdict = {
   reply: string;
   kind: Kind;
   level: Level;
-  family_log: string;
-  family_alert: string | null;
+  log: string;
+  to_family: string | null;
+  to_care_team: string | null;
 };
 
 export type Incoming = {
   text: string;
   image?: { data: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" };
+  onCamera?: boolean;
 };
 
 function scheduleBlocks(slot: Slot): Anthropic.Beta.BetaContentBlockParam[] {
@@ -73,96 +90,135 @@ function scheduleBlocks(slot: Slot): Anthropic.Beta.BetaContentBlockParam[] {
   return blocks;
 }
 
-export async function think(msg: Incoming): Promise<Verdict> {
-  const content: Anthropic.Beta.BetaContentBlockParam[] = [
-    { type: "text", text: `Patient: ${patient.name}. ${patient.conditions}` },
-    ...scheduleBlocks(currentSlot()),
-    { type: "text", text: `Today's log so far:\n${logForModel()}` },
-  ];
-  if (msg.image) {
-    content.push({ type: "text", text: "Photo she just sent:" });
-    content.push({
-      type: "image",
-      source: { type: "base64", media_type: msg.image.mediaType, data: msg.image.data },
-    });
-  }
-  content.push({ type: "text", text: `Her message: ${msg.text || "(photo only, no text)"}` });
-
+async function ask<T>(system: string, schema: object, content: Anthropic.Beta.BetaContentBlockParam[]): Promise<T | null> {
   const response = await client.beta.messages.create({
     model: "claude-opus-5-5",
-    max_tokens: 16000,
+    max_tokens: 8000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    output_config: { effort: "low", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
-    system: SYSTEM,
+    output_config: { effort: "low", format: { type: "json_schema", schema: schema as Record<string, unknown> } },
+    system,
     messages: [{ role: "user", content }],
   });
-
   const text = response.content
     .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
     .map((b) => b.text)
     .join("");
-  if (response.stop_reason === "refusal" || !text) {
-    return {
-      reply: "I couldn't read that one. I'm asking your family to check in with you.",
-      kind: "chat",
-      level: "yellow",
-      family_log: "Kinly could not process a message and asked the family to check in.",
-      family_alert: "Kinly couldn't process Mom's last message. A quick call would help.",
-    };
-  }
-  return JSON.parse(text) as Verdict;
+  if (response.stop_reason === "refusal" || !text) return null;
+  return JSON.parse(text) as T;
 }
 
-// ---- Phone call: when the level is red, Kinly rings her and talks. ----
+export async function withHer(msg: Incoming): Promise<ElderVerdict> {
+  const content: Anthropic.Beta.BetaContentBlockParam[] = [
+    { type: "text", text: `About her: ${patient.conditions}` },
+    ...scheduleBlocks(currentSlot()),
+    { type: "text", text: `Today's log:\n${logForModel()}` },
+  ];
+  if (msg.image) {
+    content.push({ type: "text", text: msg.onCamera ? "What she is showing you on camera right now:" : "Photo she just sent:" });
+    content.push({ type: "image", source: { type: "base64", media_type: msg.image.mediaType, data: msg.image.data } });
+  }
+  content.push({
+    type: "text",
+    text: `${msg.onCamera ? "She says (spoken)" : "Her message"}: ${msg.text || "(nothing said, she is just showing you)"}`,
+  });
 
-const CALL_SYSTEM = `You are Kinly, a care companion, on a phone call with an older adult who lives alone. You called because something in today's log worried you. Your words are read aloud by a voice, so write only what should be spoken: short, warm, plain sentences, no lists, no emoji, no symbols.
+  return (
+    (await ask<ElderVerdict>(ELDER_SYSTEM, ELDER_SCHEMA, content)) ?? {
+      reply: `I couldn't quite make that out. I'll ask ${FAMILY} to give you a ring.`,
+      kind: "chat",
+      level: "yellow",
+      log: "Kinly could not process a message.",
+      to_family: `I couldn't make sense of ${patient.name}'s last message. A quick call from you would be lovely.`,
+      to_care_team: null,
+    }
+  );
+}
 
-Find out how she feels right now and whether she is safe. Ask one thing at a time. You never diagnose and never tell her to change a dose. If she sounds unwell, confused or alone with a problem, tell her you are getting her family on the line and to stay seated. Two or three exchanges is enough; then say goodbye warmly and end the call.`;
+// ---------- Talking with the circle (family or care team message Kinly) ----------
+
+export type Role = "family" | "care";
+
+const CIRCLE_SYSTEM = `${COMPANION}
+
+Right now someone from her circle is messaging you in WhatsApp. Answer them in at most 3 short sentences.
+- If they ask how she is, answer from today's log, honestly, with the numbers. If the log does not say, tell them so and offer to ask her.
+- If they want something passed on or asked (love, plans, a question, a change from the care team such as a new dose time), write what you will say to her: in your own warm voice, naming who it is from, short enough to read at a glance. A dose or schedule change only ever comes from the care team; if family asks for one, say you will check with the care team first.
+- Tell them plainly what you are passing on to her.`;
+
+const CIRCLE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["reply", "to_her", "log"],
+  properties: {
+    reply: { type: "string", description: "What Kinly answers to the person who wrote." },
+    to_her: { type: ["string", "null"], description: "What Kinly now says to her in WhatsApp, or null if nothing needs passing on." },
+    log: { type: "string", description: "One line for the shared log: who wrote and what they asked or said." },
+  },
+} as const;
+
+export type CircleVerdict = { reply: string; to_her: string | null; log: string };
+
+export async function withCircle(role: Role, text: string): Promise<CircleVerdict> {
+  const who = role === "family" ? `${FAMILY}, her daughter` : "Her care team (a nurse at the care center)";
+  return (
+    (await ask<CircleVerdict>(CIRCLE_SYSTEM, CIRCLE_SCHEMA, [
+      { type: "text", text: `About her: ${patient.conditions}\nToday's log:\n${logForModel()}\n\n${who} writes: ${text}` },
+    ])) ?? { reply: "Sorry, I missed that. Could you say it another way?", to_her: null, log: `${who} wrote, but Kinly could not process it.` }
+  );
+}
+
+// ---------- A good-morning message, sent first by Kinly ----------
+
+const HELLO_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["message"],
+  properties: { message: { type: "string" } },
+} as const;
+
+export async function hello(cameraLink: string | null): Promise<string> {
+  const slot = currentSlot();
+  const doses = patient.schedule[slot].map((d) => `${d.count} x ${d.pill.name} (${d.purpose}; ${d.pill.color}, ${d.pill.shape})`).join("; ");
+  const out = await ask<{ message: string }>(
+    `${COMPANION}\n\nWrite the WhatsApp message you send her first thing in this time slot. A real greeting from someone glad to talk to her, then which pills are for now described by what they look like, then an open invitation to show you or tell you anything. At most 4 short sentences. No lists.${cameraLink ? ` End with this link on its own line, introduced as the way to show you things live: ${cameraLink}` : ""}`,
+    HELLO_SCHEMA,
+    [{ type: "text", text: `Time slot: ${slot}. Scheduled now: ${doses || "nothing"}.\nToday's log:\n${logForModel()}` }],
+  );
+  return out?.message ?? `Good ${slot}! It's Kinly. Show me or tell me anything, any time.`;
+}
+
+// ---------- Phone call: on a red moment, Kinly rings her ----------
+
+const CALL_SYSTEM = `${COMPANION}
+
+You are on a phone call with her. You called because something today worried you. Your words are read aloud, so write only what should be spoken: short, warm, plain sentences, no lists, no emoji, no symbols.
+
+Find out how she feels right now and whether she is safe. One question at a time. If she sounds unwell, confused or alone with a problem, tell her you are getting her care team and ${FAMILY}, and to stay seated. Two or three exchanges is enough; then say a warm goodbye and end the call.`;
 
 const CALL_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["say", "end_call", "family_note"],
+  required: ["say", "end_call", "note"],
   properties: {
     say: { type: "string", description: "What Kinly says next, one to three short sentences." },
     end_call: { type: "boolean", description: "True when this is Kinly's goodbye." },
-    family_note: {
-      type: ["string", "null"],
-      description: "When ending the call: one or two lines for the family on how she sounded and what she said. Null otherwise.",
-    },
+    note: { type: ["string", "null"], description: "When ending: one or two lines for her family and care team on how she sounded and what she said. Null otherwise." },
   },
 } as const;
 
 export type CallTurn = { who: "kinly" | "her"; said: string };
-export type CallStep = { say: string; end_call: boolean; family_note: string | null };
+export type CallStep = { say: string; end_call: boolean; note: string | null };
 
-export async function talk(reason: string, turns: CallTurn[]): Promise<CallStep> {
-  const transcript = turns.map((t) => `${t.who === "kinly" ? "Kinly" : patient.name}: ${t.said}`).join("\n");
-  const response = await client.beta.messages.create({
-    model: "claude-opus-5-5",
-    max_tokens: 4000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "low", format: { type: "json_schema", schema: CALL_SCHEMA } },
-    system: CALL_SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Patient: ${patient.name}. ${patient.conditions}\nWhy you called: ${reason}\nToday's log:\n${logForModel()}\n\nThe call so far:\n${transcript}\n\nWhat do you say next?`,
-      },
-    ],
-  });
-  const text = response.content
-    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
-  if (response.stop_reason === "refusal" || !text) {
-    return {
-      say: "I'm going to ask your family to call you right now. Please stay where you are. Goodbye for now.",
+export async function onThePhone(reason: string, turns: CallTurn[]): Promise<CallStep> {
+  const transcript = turns.map((t) => `${t.who === "kinly" ? "Kinly" : patient.name}: ${t.said}`).join("\n") || "(she has just picked up)";
+  return (
+    (await ask<CallStep>(CALL_SYSTEM, CALL_SCHEMA, [
+      { type: "text", text: `About her: ${patient.conditions}\nWhy you called: ${reason}\nToday's log:\n${logForModel()}\n\nThe call so far:\n${transcript}\n\nWhat do you say next?` },
+    ])) ?? {
+      say: `I'm going to ask ${FAMILY} to call you right now. Please stay where you are. Goodbye for now.`,
       end_call: true,
-      family_note: "Kinly's call was cut short. Please call Mom.",
-    };
-  }
-  return JSON.parse(text) as CallStep;
+      note: "Kinly's call was cut short. Please call her.",
+    }
+  );
 }

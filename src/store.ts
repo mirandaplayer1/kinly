@@ -1,6 +1,6 @@
 // Today's care log, kept in memory. Kinly reads it for context; the family page shows it.
 export type Level = "green" | "yellow" | "red";
-export type Kind = "pills" | "glucose" | "blood_pressure" | "meal" | "clock" | "chat" | "call";
+export type Kind = "pills" | "glucose" | "blood_pressure" | "meal" | "clock" | "chat" | "call" | "family" | "care";
 
 export type CareEvent = {
   time: string; // ISO

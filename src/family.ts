@@ -33,7 +33,7 @@ export const FAMILY_PAGE = `<!doctype html>
   <div id="list"><p class="empty">Nothing yet today.</p></div>
 </main>
 <script>
-const LABEL = { pills: "Pills", glucose: "Blood sugar", blood_pressure: "Blood pressure", meal: "Meal", clock: "Brain-health check-in", chat: "Message", call: "Phone call" };
+const LABEL = { pills: "Pills", glucose: "Blood sugar", blood_pressure: "Blood pressure", meal: "Meal", clock: "Brain-health check-in", chat: "Chat with Kinly", call: "Kinly called her", family: "From family", care: "From care team" };
 const HEAD = { green: "All good today", yellow: "Worth a call today", red: "Check on Mom now" };
 const ORDER = { green: 0, yellow: 1, red: 2 };
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }

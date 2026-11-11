@@ -1,19 +1,23 @@
-// WhatsApp webhook (Twilio), the phone call Kinly makes on a red alert, and the family page.
+// Kinly's switchboard: WhatsApp with her and her care circle, the live camera page,
+// the phone call on a red moment, and the family page.
 // Twilio waits only ~15 s for a webhook, so WhatsApp is answered at once and Kinly's reply follows.
 import "dotenv/config";
 import express from "express";
 import twilio from "twilio";
-import { think, talk, type Incoming, type CallTurn } from "./agent.js";
+import { withHer, withCircle, hello, onThePhone, type Incoming, type CallTurn, type Role, type ElderVerdict } from "./agent.js";
 import { addEvent, todaysEvents } from "./store.js";
 import { FAMILY_PAGE } from "./family.js";
+import { SEE_PAGE } from "./see.js";
 
 const {
   TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN,
   TWILIO_WHATSAPP_FROM,
   TWILIO_VOICE_FROM, // a Twilio phone number, e.g. +15551234567. Without it Kinly does not call.
-  PUBLIC_URL, // the ngrok https URL, needed for calls
+  PUBLIC_URL, // the ngrok https URL: needed for calls and for the camera link
+  ELDER_WHATSAPP, // her number, e.g. whatsapp:+886912345678. If unset, the first person to write is her.
   FAMILY_WHATSAPP_TO,
+  CARE_WHATSAPP_TO,
   PORT = "3000",
 } = process.env;
 if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
@@ -24,6 +28,13 @@ const VOICE = "Polly.Joanna-Neural";
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 type ImageType = (typeof IMAGE_TYPES)[number];
 
+let elder: string | undefined = ELDER_WHATSAPP;
+
+const send = (to: string, body: string) => tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to, body });
+// With one phone, family and care-team messages land in the same chat, labelled, so every route is visible.
+const toFamily = (body: string) => (FAMILY_WHATSAPP_TO || elder) && send((FAMILY_WHATSAPP_TO || elder)!, body);
+const toCare = (body: string) => (CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder) && send((CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder)!, body);
+
 async function downloadImage(url: string, type: string): Promise<Incoming["image"]> {
   if (!IMAGE_TYPES.includes(type as ImageType)) return undefined;
   const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64");
@@ -32,70 +43,49 @@ async function downloadImage(url: string, type: string): Promise<Incoming["image
   return { data: Buffer.from(await res.arrayBuffer()).toString("base64"), mediaType: type as ImageType };
 }
 
-const send = (to: string, body: string) => tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to, body });
-const tellFamily = (elder: string, body: string) => send(FAMILY_WHATSAPP_TO || elder, body);
+// Who is writing? Known numbers first; a "family:" or "care:" prefix lets one phone play every part.
+function roleOf(from: string, text: string): { role: "elder" | Role; text: string } {
+  const m = text.match(/^\s*(family|care)\s*:\s*/i);
+  if (m) return { role: m[1].toLowerCase() as Role, text: text.slice(m[0].length) };
+  if (from === FAMILY_WHATSAPP_TO) return { role: "family", text };
+  if (from === CARE_WHATSAPP_TO) return { role: "care", text };
+  return { role: "elder", text };
+}
 
-// Calls in progress, keyed by Twilio CallSid.
-type Call = { elder: string; reason: string; turns: CallTurn[] };
+// ---------- Her side: one path for WhatsApp and the camera ----------
+
+async function herMoment(msg: Incoming): Promise<ElderVerdict> {
+  const v = await withHer(msg);
+  console.log(`-> her [${v.level}] ${v.reply}`);
+  addEvent({
+    kind: v.kind,
+    level: v.level,
+    summary: v.log,
+    photo: msg.image ? `data:${msg.image.mediaType};base64,${msg.image.data}` : undefined,
+  });
+  // Routing: each person hears only what is theirs to act on.
+  if (v.to_family) {
+    const tag = v.level === "red" ? "🔴 " : v.level === "yellow" ? "🟡 " : "";
+    await toFamily(`${tag}Kinly → family\n${v.to_family}`);
+  }
+  if (v.to_care_team) await toCare(`${v.level === "red" ? "🔴 " : ""}Kinly → care team\n${v.to_care_team}`);
+  if (v.level === "red") await ringHer(v.log);
+  return v;
+}
+
+// ---------- Phone call ----------
+
+type Call = { reason: string; turns: CallTurn[] };
 const calls = new Map<string, Call>();
 const MAX_HER_TURNS = 3;
 
-async function ringHer(elderWhatsApp: string, reason: string) {
-  if (!TWILIO_VOICE_FROM || !PUBLIC_URL) return;
-  const call = await tw.calls.create({
-    to: elderWhatsApp.replace("whatsapp:", ""),
-    from: TWILIO_VOICE_FROM,
-    url: `${PUBLIC_URL}/voice`,
-  });
-  calls.set(call.sid, { elder: elderWhatsApp, reason, turns: [] });
+async function ringHer(reason: string) {
+  if (!TWILIO_VOICE_FROM || !PUBLIC_URL || !elder) return;
+  const call = await tw.calls.create({ to: elder.replace("whatsapp:", ""), from: TWILIO_VOICE_FROM, url: `${PUBLIC_URL}/voice` });
+  calls.set(call.sid, { reason, turns: [] });
   console.log(`=> calling her (${call.sid})`);
 }
 
-const app = express();
-app.use(express.urlencoded({ extended: false }));
-
-app.get("/", (_req, res) => res.redirect("/family"));
-app.get("/family", (_req, res) => res.type("html").send(FAMILY_PAGE));
-app.get("/api/events", (_req, res) => res.json(todaysEvents()));
-
-app.post("/whatsapp", (req, res) => {
-  res.type("text/xml").send("<Response></Response>");
-
-  const from: string = req.body.From;
-  const text: string = req.body.Body ?? "";
-  const numMedia = Number(req.body.NumMedia ?? 0);
-  console.log(`<- ${from}: ${text || "(photo)"}`);
-
-  (async () => {
-    const image =
-      numMedia > 0 ? await downloadImage(req.body.MediaUrl0, req.body.MediaContentType0) : undefined;
-    const v = await think({ text, image });
-
-    await send(from, v.reply);
-    console.log(`-> [${v.level}] ${v.reply}`);
-
-    addEvent({
-      kind: v.kind,
-      level: v.level,
-      summary: v.family_log,
-      photo: image ? `data:${image.mediaType};base64,${image.data}` : undefined,
-    });
-
-    // Yellow or red: bring in a human. Red: Kinly also rings her.
-    // Without a second number set, the alert goes to the sender so the demo still shows it.
-    if (v.level !== "green" && v.family_alert) {
-      const tag = v.level === "red" ? "🔴 Kinly alert" : "🟡 Kinly heads-up";
-      await tellFamily(from, `${tag} about Mom\n${v.family_alert}`);
-      console.log(`=> family: ${v.family_alert}`);
-    }
-    if (v.level === "red") await ringHer(from, v.family_log);
-  })().catch(async (err) => {
-    console.error(err);
-    await send(from, "Sorry, something went wrong on my side. Please send it again.").catch(() => {});
-  });
-});
-
-// One step of the phone call: Twilio posts what she said, Kinly answers and listens again.
 async function callStep(req: express.Request, res: express.Response) {
   const call = calls.get(req.body.CallSid);
   const vr = new twilio.twiml.VoiceResponse();
@@ -103,37 +93,101 @@ async function callStep(req: express.Request, res: express.Response) {
     vr.say({ voice: VOICE }, "Sorry, I lost my place. I'll message you instead. Goodbye.");
     return res.type("text/xml").send(vr.toString());
   }
-
   const heard: string | undefined = req.body.SpeechResult;
   if (heard) {
     call.turns.push({ who: "her", said: heard });
     console.log(`<- (call) ${heard}`);
   } else if (call.turns.length > 0) {
-    call.turns.push({ who: "her", said: "(silence, no answer)" });
+    call.turns.push({ who: "her", said: "(silence)" });
   }
-
   const herTurns = call.turns.filter((t) => t.who === "her").length;
-  const step = await talk(
-    herTurns >= MAX_HER_TURNS ? `${call.reason} (This is your last turn: say goodbye now.)` : call.reason,
-    call.turns,
-  );
+  const last = herTurns >= MAX_HER_TURNS;
+  const step = await onThePhone(last ? `${call.reason} (This is your last turn: say goodbye now.)` : call.reason, call.turns);
   call.turns.push({ who: "kinly", said: step.say });
   console.log(`-> (call) ${step.say}`);
 
-  if (step.end_call || herTurns >= MAX_HER_TURNS) {
+  if (step.end_call || last) {
     vr.say({ voice: VOICE }, step.say);
     vr.hangup();
-    const note = step.family_note ?? "Kinly spoke with Mom on the phone.";
+    const note = step.note ?? "Kinly spoke with her on the phone.";
     addEvent({ kind: "call", level: "yellow", summary: `Kinly called her. ${note}` });
-    tellFamily(call.elder, `📞 Kinly just called Mom\n${note}`).catch(console.error);
+    Promise.all([toFamily(`📞 Kinly → family\nI just called Mom. ${note}`), CARE_WHATSAPP_TO && toCare(`📞 Kinly → care team\nCalled her. ${note}`)]).catch(console.error);
     calls.delete(req.body.CallSid);
   } else {
     const gather = vr.gather({ input: ["speech"], action: `${PUBLIC_URL}/voice`, method: "POST", speechTimeout: "auto", timeout: 6 });
     gather.say({ voice: VOICE }, step.say);
-    vr.redirect({ method: "POST" }, `${PUBLIC_URL}/voice`); // she said nothing: ask again
+    vr.redirect({ method: "POST" }, `${PUBLIC_URL}/voice`); // silence: ask again
   }
   res.type("text/xml").send(vr.toString());
 }
+
+// ---------- Routes ----------
+
+const app = express();
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "8mb" }));
+
+app.get("/", (_req, res) => res.redirect("/family"));
+app.get("/family", (_req, res) => res.type("html").send(FAMILY_PAGE));
+app.get("/see", (_req, res) => res.type("html").send(SEE_PAGE));
+app.get("/api/events", (_req, res) => res.json(todaysEvents()));
+
+app.post("/whatsapp", (req, res) => {
+  res.type("text/xml").send("<Response></Response>");
+  const from: string = req.body.From;
+  const numMedia = Number(req.body.NumMedia ?? 0);
+  const { role, text } = roleOf(from, req.body.Body ?? "");
+  console.log(`<- ${role} ${from}: ${text || "(photo)"}`);
+
+  (async () => {
+    if (role === "elder") {
+      elder ??= from;
+      const image = numMedia > 0 ? await downloadImage(req.body.MediaUrl0, req.body.MediaContentType0) : undefined;
+      const v = await herMoment({ text, image });
+      await send(from, v.reply);
+      return;
+    }
+    // Family or care team writing to Kinly.
+    const c = await withCircle(role, text);
+    addEvent({ kind: role, level: "green", summary: c.log });
+    await send(from, c.reply);
+    console.log(`-> ${role}: ${c.reply}`);
+    if (c.to_her && elder) {
+      await send(elder, c.to_her);
+      console.log(`-> her (passed on): ${c.to_her}`);
+    }
+  })().catch(async (err) => {
+    console.error(err);
+    await send(from, "Sorry, something went wrong on my side. Please send it again.").catch(() => {});
+  });
+});
+
+// The live camera: a frame plus what she said. Kinly's answer is spoken by the page.
+app.post("/api/see", async (req, res) => {
+  try {
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(req.body.image ?? "");
+    if (!m) return res.status(400).json({ reply: "I couldn't see anything. Try once more?" });
+    const v = await herMoment({ text: String(req.body.text ?? ""), image: { mediaType: m[1] as ImageType, data: m[2] }, onCamera: true });
+    res.json({ reply: v.reply, level: v.level });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ reply: "I lost you for a second. Try once more?" });
+  }
+});
+
+// Kinly speaks first: open /hello to send her this time slot's greeting.
+app.all("/hello", async (_req, res) => {
+  try {
+    if (!elder) return res.status(400).send("I don't know her number yet. Set ELDER_WHATSAPP, or have her message Kinly once.");
+    const message = await hello(PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
+    await send(elder, message);
+    console.log(`-> her (hello): ${message}`);
+    res.send(`Sent: ${message}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(String(err));
+  }
+});
 
 app.post("/voice", (req, res) => {
   callStep(req, res).catch((err) => {
@@ -145,6 +199,6 @@ app.post("/voice", (req, res) => {
 });
 
 app.listen(Number(PORT), () => {
-  console.log(`Kinly on http://localhost:${PORT}  ·  family page: /family`);
+  console.log(`Kinly on http://localhost:${PORT}  ·  /family  ·  /see  ·  /hello`);
   console.log(TWILIO_VOICE_FROM && PUBLIC_URL ? "Phone calls: on" : "Phone calls: off (set TWILIO_VOICE_FROM and PUBLIC_URL)");
 });
