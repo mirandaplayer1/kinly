@@ -71,19 +71,26 @@ export function findPill(englishName: string): Pill {
   };
 }
 
-/** Find a pill by a name the family typed: exact product name first, then the closest match that contains it. */
+/**
+ * Find the reference pill for a name read off a label or typed by the family.
+ * A wrong reference photo is worse than none, so a name that fits several different products
+ * (a generic made by many companies, say) gets no reference at all.
+ */
 export function softFindPill(name: string): Pill | null {
   const want = name.trim().toUpperCase();
   if (!want) return null;
-  const row =
-    rows.find((r) => r.英文品名?.toUpperCase() === want) ??
-    rows.find((r) => r.英文品名?.toUpperCase().startsWith(want)) ??
-    rows.find((r) => r.英文品名?.toUpperCase().includes(want));
-  if (row) return findPill(row.英文品名);
+  const names = rows.map((r) => r.英文品名).filter(Boolean);
+  const only = (list: string[]) => (new Set(list).size === 1 ? findPill(list[0]) : null);
+
+  const exact = names.filter((n) => n.toUpperCase() === want);
+  if (exact.length) return only(exact);
+  const prefix = names.filter((n) => n.toUpperCase().startsWith(want));
+  if (prefix.length) return only(prefix);
+
   // A label says "NORVASC 5 MG TABLET"; the dataset says "NORVASC TABLETS 5MG". Match the brand, then the strength.
   const [brand, ...rest] = want.split(/\s+/);
   const strength = rest.join("").match(/\d+(?:\.\d+)?MG/)?.[0];
-  const sameBrand = rows.filter((r) => r.英文品名?.toUpperCase().split(/[\s"]+/)[0] === brand);
-  const best = (strength && sameBrand.find((r) => r.英文品名.toUpperCase().replace(/\s+/g, "").includes(strength))) || sameBrand[0];
-  return best ? findPill(best.英文品名) : null;
+  const sameBrand = names.filter((n) => n.toUpperCase().split(/[\s"]+/)[0] === brand);
+  const sameStrength = strength ? sameBrand.filter((n) => n.toUpperCase().replace(/\s+/g, "").includes(strength)) : [];
+  return only(sameStrength.length ? sameStrength : sameBrand);
 }
