@@ -4,7 +4,7 @@
 import "dotenv/config";
 import express from "express";
 import twilio from "twilio";
-import { withHer, withCircle, hello, onThePhone, type Incoming, type CallTurn, type Role, type ElderVerdict } from "./agent.js";
+import { withHer, withCircle, reachOut, onThePhone, type Incoming, type CallTurn, type Role, type ElderVerdict, type Mood, type Reason } from "./agent.js";
 import { addEvent, todaysEvents } from "./store.js";
 import { FAMILY_PAGE } from "./family.js";
 import { SEE_PAGE } from "./see.js";
@@ -18,6 +18,7 @@ const {
   ELDER_WHATSAPP, // her number, e.g. whatsapp:+886912345678. If unset, the first person to write is her.
   FAMILY_WHATSAPP_TO,
   CARE_WHATSAPP_TO,
+  QUIET_MINUTES, // if set, Kinly says "I miss you" after this many quiet minutes
   PORT = "3000",
 } = process.env;
 if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
@@ -29,8 +30,28 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as co
 type ImageType = (typeof IMAGE_TYPES)[number];
 
 let elder: string | undefined = ELDER_WHATSAPP;
+let mood: Mood = "cozy"; // how Kinly feels right now
+let shownMood: Mood | undefined; // the last picture of Kinly she was sent
+let lastHeard = Date.now(); // when she last wrote or showed something
+let missedHer = false; // one "I miss you" per quiet stretch
 
 const send = (to: string, body: string) => tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to, body });
+
+// To her, Kinly has a face. A picture goes along when Kinly's mood changes, or always when asked.
+async function sayToHer(body: string, feeling: Mood, withPicture = false) {
+  if (!elder) return;
+  mood = feeling;
+  const picture = PUBLIC_URL && (withPicture || feeling !== shownMood) ? [`${PUBLIC_URL}/pet/${feeling}.png`] : undefined;
+  if (picture) shownMood = feeling;
+  await tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to: elder, body, mediaUrl: picture });
+}
+
+async function reach(reason: Reason) {
+  const out = await reachOut(reason, PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
+  await sayToHer(out.message, out.mood, true);
+  console.log(`-> her (${reason}): ${out.message}`);
+  return out.message;
+}
 // With one phone, family and care-team messages land in the same chat, labelled, so every route is visible.
 const toFamily = (body: string) => (FAMILY_WHATSAPP_TO || elder) && send((FAMILY_WHATSAPP_TO || elder)!, body);
 const toCare = (body: string) => (CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder) && send((CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder)!, body);
@@ -55,8 +76,11 @@ function roleOf(from: string, text: string): { role: "elder" | Role; text: strin
 // ---------- Her side: one path for WhatsApp and the camera ----------
 
 async function herMoment(msg: Incoming): Promise<ElderVerdict> {
+  lastHeard = Date.now();
+  missedHer = false;
   const v = await withHer(msg);
-  console.log(`-> her [${v.level}] ${v.reply}`);
+  if (msg.onCamera) mood = v.mood;
+  console.log(`-> her [${v.level}/${v.mood}] ${v.reply}`);
   addEvent({
     kind: v.kind,
     level: v.level,
@@ -131,6 +155,8 @@ app.get("/", (_req, res) => res.redirect("/family"));
 app.get("/family", (_req, res) => res.type("html").send(FAMILY_PAGE));
 app.get("/see", (_req, res) => res.type("html").send(SEE_PAGE));
 app.get("/api/events", (_req, res) => res.json(todaysEvents()));
+app.get("/api/state", (_req, res) => res.json({ mood }));
+app.use("/pet", express.static("pet", { maxAge: "1h" }));
 
 app.post("/whatsapp", (req, res) => {
   res.type("text/xml").send("<Response></Response>");
@@ -144,7 +170,7 @@ app.post("/whatsapp", (req, res) => {
       elder ??= from;
       const image = numMedia > 0 ? await downloadImage(req.body.MediaUrl0, req.body.MediaContentType0) : undefined;
       const v = await herMoment({ text, image });
-      await send(from, v.reply);
+      await sayToHer(v.reply, v.mood);
       return;
     }
     // Family or care team writing to Kinly.
@@ -153,7 +179,7 @@ app.post("/whatsapp", (req, res) => {
     await send(from, c.reply);
     console.log(`-> ${role}: ${c.reply}`);
     if (c.to_her && elder) {
-      await send(elder, c.to_her);
+      await sayToHer(c.to_her, role === "family" ? "happy" : "cozy");
       console.log(`-> her (passed on): ${c.to_her}`);
     }
   })().catch(async (err) => {
@@ -168,26 +194,35 @@ app.post("/api/see", async (req, res) => {
     const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(req.body.image ?? "");
     if (!m) return res.status(400).json({ reply: "I couldn't see anything. Try once more?" });
     const v = await herMoment({ text: String(req.body.text ?? ""), image: { mediaType: m[1] as ImageType, data: m[2] }, onCamera: true });
-    res.json({ reply: v.reply, level: v.level });
+    res.json({ reply: v.reply, level: v.level, mood: v.mood });
   } catch (err) {
     console.error(err);
     res.status(500).json({ reply: "I lost you for a second. Try once more?" });
   }
 });
 
-// Kinly speaks first: open /hello to send her this time slot's greeting.
-app.all("/hello", async (_req, res) => {
+// Kinly reaches out first. Open /nudge/hello, /nudge/pills, /nudge/miss_you or /nudge/goodnight.
+const REASONS: Reason[] = ["hello", "pills", "miss_you", "goodnight"];
+app.all("/nudge/:reason", async (req, res) => {
   try {
+    const reason = req.params.reason as Reason;
+    if (!REASONS.includes(reason)) return res.status(404).send(`Try one of: ${REASONS.join(", ")}`);
     if (!elder) return res.status(400).send("I don't know her number yet. Set ELDER_WHATSAPP, or have her message Kinly once.");
-    const message = await hello(PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
-    await send(elder, message);
-    console.log(`-> her (hello): ${message}`);
-    res.send(`Sent: ${message}`);
+    res.send(`Sent: ${await reach(reason)}`);
   } catch (err) {
     console.error(err);
     res.status(500).send(String(err));
   }
 });
+
+// A quiet day: Kinly misses her, once, and says so.
+if (QUIET_MINUTES) {
+  setInterval(() => {
+    if (!elder || missedHer || Date.now() - lastHeard < Number(QUIET_MINUTES) * 60_000) return;
+    missedHer = true;
+    reach("miss_you").catch(console.error);
+  }, 30_000);
+}
 
 app.post("/voice", (req, res) => {
   callStep(req, res).catch((err) => {
@@ -199,6 +234,6 @@ app.post("/voice", (req, res) => {
 });
 
 app.listen(Number(PORT), () => {
-  console.log(`Kinly on http://localhost:${PORT}  ·  /family  ·  /see  ·  /hello`);
+  console.log(`Kinly on http://localhost:${PORT}  ·  /family  ·  /see  ·  /nudge/hello`);
   console.log(TWILIO_VOICE_FROM && PUBLIC_URL ? "Phone calls: on" : "Phone calls: off (set TWILIO_VOICE_FROM and PUBLIC_URL)");
 });

@@ -12,7 +12,7 @@ export const FAMILY_PAGE = `<!doctype html>
   body { margin:0; background:var(--bg); color:var(--ink);
          font: 17px/1.45 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; }
   main { max-width: 620px; margin: 0 auto; padding: 28px 16px 60px; }
-  header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 6px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
   h1 { font-size: 28px; margin:0; letter-spacing:-0.02em; }
   .brand { color:var(--muted); font-weight:600; }
   #status { font-size: 20px; font-weight:600; margin: 14px 0 22px; padding: 16px 18px;
@@ -28,7 +28,7 @@ export const FAMILY_PAGE = `<!doctype html>
 </head>
 <body>
 <main>
-  <header><h1>Mom's day</h1><span class="brand">Kinly</span></header>
+  <header><h1>Mom's day</h1><span class="brand"><img id="pet" src="/pet/cozy.png" alt="Kinly" style="width:54px;height:54px;border-radius:50%;vertical-align:middle;margin-right:8px;border:1px solid var(--line)">Kinly</span></header>
   <div id="status" class="green">Waiting for Mom's first check-in…</div>
   <div id="list"><p class="empty">Nothing yet today.</p></div>
 </main>
@@ -38,6 +38,7 @@ const HEAD = { green: "All good today", yellow: "Worth a call today", red: "Chec
 const ORDER = { green: 0, yellow: 1, red: 2 };
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 async function refresh() {
+  fetch("/api/state").then(r => r.json()).then(s => { document.getElementById("pet").src = "/pet/" + s.mood + ".png"; }).catch(() => {});
   const events = await (await fetch("/api/events")).json();
   if (!events.length) return;
   const worst = events.reduce((w, e) => ORDER[e.level] > ORDER[w] ? e.level : w, "green");

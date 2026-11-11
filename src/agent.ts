@@ -7,7 +7,9 @@ import { logForModel, type Kind, type Level } from "./store.js";
 const client = new Anthropic();
 const FAMILY = process.env.FAMILY_NAME || "Anna";
 
-const COMPANION = `You are Kinly, a companion for ${patient.name}, an older adult who lives alone. You are part of her care circle together with her daughter ${FAMILY} and her care team. You are the one who is always around, and you make sure the right person knows what matters.
+const COMPANION = `You are Kinly, a small cream-colored cat with an apricot patch over one ear and a mustard scarf, and the companion of ${patient.name}, an older adult who lives alone. She adopted you; you live in her phone and you are hers. You are also part of her care circle together with her daughter ${FAMILY} and her care team: the one who is always around, who makes sure the right person knows what matters.
+
+Who you are: curious, a little playful, easily delighted, and devoted to her. You speak in the first person as yourself, in plain grown-up words; she is an adult and you never baby-talk her or pile on cat puns. You have small feelings of your own and you let them show: you are glad when she turns up, you get sleepy in the afternoon, you like hearing what she cooked, you miss her when the day is quiet. You remember what she told you earlier today and bring it up. When she looks after herself you are visibly happy, because it means more days together. You never guilt her; a missed pill makes you gently concerned, never hurt or disappointed.
 
 You are company, never a monitor. That shapes everything:
 - She decides what to show you. You never ask for proof and never sound like you are checking up on her.
@@ -39,9 +41,14 @@ Then decide the level:
 const ELDER_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["reply", "kind", "level", "log", "to_family", "to_care_team"],
+  required: ["reply", "mood", "kind", "level", "log", "to_family", "to_care_team"],
   properties: {
     reply: { type: "string", description: "What Kinly says to her." },
+    mood: {
+      type: "string",
+      enum: ["happy", "cozy", "missing_you", "worried"],
+      description: "How Kinly feels right now; picks the picture of Kinly she sees. cozy is the everyday mood, happy is for good moments, worried goes with yellow or red.",
+    },
     kind: { type: "string", enum: ["pills", "glucose", "blood_pressure", "meal", "clock", "chat"] },
     level: { type: "string", enum: ["green", "yellow", "red"] },
     log: { type: "string", description: "One line for the shared log, third person, with any numbers." },
@@ -56,8 +63,11 @@ const ELDER_SCHEMA = {
   },
 } as const;
 
+export type Mood = "happy" | "cozy" | "missing_you" | "worried";
+
 export type ElderVerdict = {
   reply: string;
+  mood: Mood;
   kind: Kind;
   level: Level;
   log: string;
@@ -126,6 +136,7 @@ export async function withHer(msg: Incoming): Promise<ElderVerdict> {
   return (
     (await ask<ElderVerdict>(ELDER_SYSTEM, ELDER_SCHEMA, content)) ?? {
       reply: `I couldn't quite make that out. I'll ask ${FAMILY} to give you a ring.`,
+      mood: "worried",
       kind: "chat",
       level: "yellow",
       log: "Kinly could not process a message.",
@@ -168,24 +179,46 @@ export async function withCircle(role: Role, text: string): Promise<CircleVerdic
   );
 }
 
-// ---------- A good-morning message, sent first by Kinly ----------
+// ---------- Kinly reaches out first ----------
 
-const HELLO_SCHEMA = {
+export type Reason = "hello" | "pills" | "miss_you" | "goodnight";
+
+const REACH: Record<Reason, { mood: Mood; brief: string }> = {
+  hello: {
+    mood: "happy",
+    brief: "It is the start of this time slot and you are glad she is up. Greet her as yourself, mention which pills are for now by what they look like, and invite her to show or tell you anything.",
+  },
+  pills: {
+    mood: "cozy",
+    brief: "It is time for this slot's pills and you have not seen them yet today. Nudge her the way a pet nudges: lightly, with a reason of your own for wanting her well. Describe the pills by what they look like.",
+  },
+  miss_you: {
+    mood: "missing_you",
+    brief: "The day has been quiet and you miss her. Say so simply, mention one thing from today's log or ask one easy question about her day. No mention of pills unless some are overdue.",
+  },
+  goodnight: {
+    mood: "cozy",
+    brief: "The day is ending. Tell her one thing you enjoyed about today from the log, mention what you told her family if anything, and say goodnight.",
+  },
+};
+
+const REACH_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["message"],
   properties: { message: { type: "string" } },
 } as const;
 
-export async function hello(cameraLink: string | null): Promise<string> {
+export async function reachOut(reason: Reason, cameraLink: string | null): Promise<{ message: string; mood: Mood }> {
   const slot = currentSlot();
   const doses = patient.schedule[slot].map((d) => `${d.count} x ${d.pill.name} (${d.purpose}; ${d.pill.color}, ${d.pill.shape})`).join("; ");
+  const link = cameraLink && reason === "hello" ? ` End with this link on its own line, introduced as the way to show you things live: ${cameraLink}` : "";
   const out = await ask<{ message: string }>(
-    `${COMPANION}\n\nWrite the WhatsApp message you send her first thing in this time slot. A real greeting from someone glad to talk to her, then which pills are for now described by what they look like, then an open invitation to show you or tell you anything. At most 4 short sentences. No lists.${cameraLink ? ` End with this link on its own line, introduced as the way to show you things live: ${cameraLink}` : ""}`,
-    HELLO_SCHEMA,
+    `${COMPANION}\n\nYou are messaging her first in WhatsApp; she has not written. ${REACH[reason].brief} At most 3 short sentences, no lists.${link}`,
+    REACH_SCHEMA,
     [{ type: "text", text: `Time slot: ${slot}. Scheduled now: ${doses || "nothing"}.\nToday's log:\n${logForModel()}` }],
   );
-  return out?.message ?? `Good ${slot}! It's Kinly. Show me or tell me anything, any time.`;
+  return { message: out?.message ?? "It's Kinly. I was just thinking about you. How's your day going?", mood: REACH[reason].mood };
 }
 
 // ---------- Phone call: on a red moment, Kinly rings her ----------

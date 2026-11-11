@@ -29,7 +29,7 @@ export const SEE_PAGE = `<!doctype html>
 </head>
 <body>
 <video id="cam" autoplay playsinline muted></video>
-<div class="top"><span id="dot" class="dot"></span><span>Kinly is with you</span></div>
+<div class="top"><img id="pet" src="/pet/cozy.png" alt="" style="width:44px;height:44px;border-radius:50%"><span id="dot" class="dot"></span><span>Kinly is with you</span></div>
 <div class="bottom">
   <div id="said"></div>
   <div id="caption">Show me anything, and tell me what's on your mind.</div>
@@ -74,6 +74,7 @@ async function show(text) {
       body: JSON.stringify({ image: frame(), text: text || "" }) });
     const out = await res.json();
     caption.textContent = out.reply;
+    if (out.mood) document.getElementById("pet").src = "/pet/" + out.mood + ".png";
     speak(out.reply);
   } catch (e) {
     caption.textContent = "I lost you for a second. Try once more?";
