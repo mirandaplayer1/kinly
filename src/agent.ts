@@ -200,7 +200,7 @@ export type ReadMeds = { meds: { name: string; slots: ("morning" | "noon" | "eve
 
 export async function readMeds(image: { data: string; mediaType: string }): Promise<ReadMeds> {
   const out = await ask<ReadMeds>(
-    `${companion()}\n\nHer family is setting you up and is showing you a photo of her pharmacy bag, pill bottle label or prescription. Read every medicine on it: the name and strength as printed, and when it is taken (once daily with no time given means morning; twice daily means morning and evening; three times daily means morning, noon and evening; "at bedtime" means bedtime). Copy what is printed; never guess a medicine you cannot read, and never add one that is not there. If the photo shows no medicine label, return an empty list and say what you see instead.`,
+    `${companion()}\n\nHer family is setting you up and is showing you a photo of her pharmacy bag, pill bottle label or prescription. Read every medicine on it: the name and strength as printed, and when it is taken (once daily with no time given means morning; twice daily means morning and evening; three times daily means morning, noon and evening; "at bedtime" means bedtime). Copy what is printed; never guess a medicine you cannot read, and never add one that is not there. Labels sometimes disagree with themselves, for example written directions that say twice a day next to tick boxes that mark only the morning. Follow the written directions, and say in your note exactly what disagrees so the family can check with the pharmacy. If the photo shows no medicine label, return an empty list and say what you see instead.`,
     MEDS_SCHEMA,
     [{ text: "The photo:" }, { image }],
   );
