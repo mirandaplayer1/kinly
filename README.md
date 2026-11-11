@@ -4,6 +4,8 @@
 
 Kinly is a small cat who lives in an older adult's messenger app. It reaches out first, looks at what she shows it (her pills, her breakfast, her walk), remembers what she asks it to, and makes sure the right person in her care circle knows what matters.
 
+**[Watch the 2-minute demo](https://youtu.be/u-40Y5qICx4)**
+
 Built for a YC hackathon, in answer to the Request for Startups *AI for the Aging Population*.
 
 ## The problem
