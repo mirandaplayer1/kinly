@@ -11,7 +11,7 @@ import { findByImprint } from "./pills.js";
 import { FAMILY_PAGE } from "./family.js";
 import { ONBOARD_PAGE } from "./onboard.js";
 import { SEE_PAGE } from "./see.js";
-import { telegramOn, botUsername, tgText, tgSticker, tgListen, type TgIncoming } from "./telegram.js";
+import { telegramOn, botUsername, hasBot, tgText, tgSticker, tgListen, type TgIncoming } from "./telegram.js";
 
 const { PUBLIC_URL, QUIET_MINUTES, PORT = "3000" } = process.env;
 if (!telegramOn) throw new Error("Set TELEGRAM_BOT_TOKEN in .env");
@@ -92,7 +92,8 @@ async function herMoment(msg: Incoming): Promise<ElderVerdict> {
 
 // Who is writing? People who joined by invite link are known; a "family:" or "care:" prefix lets
 // one phone play every part.
-function roleOf(from: string, text: string): { role: "elder" | Role; text: string } {
+function roleOf(from: string, text: string, via: TgIncoming["via"] = "main"): { role: "elder" | Role; text: string } {
+  if (via !== "main") return { role: via, text };
   const m = text.match(/^\s*(family|care)\s*:\s*/i);
   if (m) return { role: m[1].toLowerCase() as Role, text: text.slice(m[0].length) };
   const s = getState();
@@ -127,8 +128,18 @@ async function join(from: string, as: string) {
 }
 
 async function onMessage(m: TgIncoming) {
-  if (m.start !== undefined) return join(m.from, m.start);
-  const { role, text } = roleOf(m.from, m.text);
+  // A stand-in bot is always its role: opening it, or writing in it, joins that chat to the circle.
+  if (m.via !== "main") {
+    const s = getState();
+    const list = m.via === "family" ? s.family : s.care;
+    if (m.start !== undefined || !list.includes(m.from)) {
+      await join(m.from, m.via);
+      if (m.start !== undefined) return;
+    }
+  } else if (m.start !== undefined) {
+    return join(m.from, m.start);
+  }
+  const { role, text } = roleOf(m.from, m.text, m.via);
   console.log(`<- ${role} ${m.from}: ${text || `(${m.media?.kind ?? "nothing"})`}`);
   try {
     if (m.tooBig) return void (await send(m.from, "That video is a bit too big for me to open. Could you send a shorter one, under a minute?"));
@@ -207,9 +218,9 @@ const profileView = () => ({
   profile: getProfile(),
   reminders: getState().memories.filter((m) => !m.told && m.remindAt && m.note.startsWith("[from family] ")).map((m) => ({ note: m.note.replace("[from family] ", ""), at: m.remindAt })),
   links: {
-    elder: `https://t.me/${botUsername}?start=elder`,
-    family: `https://t.me/${botUsername}?start=family`,
-    care: `https://t.me/${botUsername}?start=care`,
+    elder: `https://t.me/${botUsername()}?start=elder`,
+    family: hasBot("family") ? `https://t.me/${botUsername("family")}` : `https://t.me/${botUsername()}?start=family`,
+    care: hasBot("care") ? `https://t.me/${botUsername("care")}` : `https://t.me/${botUsername()}?start=care`,
     page: `${base}/family`,
   },
 });
@@ -315,7 +326,7 @@ app.all("/nudge/:what", async (req, res) => {
   }
 });
 
-tgListen(onMessage).catch(console.error);
+tgListen(onMessage);
 
 app.listen(Number(PORT), () => {
   console.log(`Kinly on ${base}  ·  /start  ·  /family  ·  /see  ·  /nudge/next`);
