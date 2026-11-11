@@ -103,7 +103,17 @@ export const ONBOARD_PAGE = `<!doctype html>
   .result { display:grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items:start; margin-top: 16px; padding: 16px; border-radius: 18px; background: #fff8ea; border: 2px solid var(--ink); }
   .result[hidden] { display:none; }
   .result.busy { border-style: dashed; }
-  #preview { width: 96px; height: 96px; object-fit: cover; border-radius: 12px; }
+  .thumb { position:relative; width: 96px; height: 96px; border-radius: 12px; overflow:hidden; background: var(--paper-deep); }
+  #preview { width: 100%; height: 100%; object-fit: cover; display:block; }
+  .result.busy .thumb::after { content:""; position:absolute; left:0; right:0; top:0; height: 34%;
+    background: linear-gradient(to bottom, transparent, rgb(224 165 38 / .75)); border-bottom: 3px solid var(--mustard); animation: scan 1.5s ease-in-out infinite alternate; }
+  @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(300%); } }
+  .reading { height: 8px; border-radius: 999px; background: var(--paper-deep); overflow:hidden; margin: 10px 0 2px; }
+  .reading[hidden] { display:none; }
+  .reading i { display:block; height:100%; width: 38%; border-radius: 999px; background: var(--ink); animation: slide 1.3s ease-in-out infinite alternate; }
+  @keyframes slide { from { transform: translateX(-20%); } to { transform: translateX(185%); } }
+  .shoot.busy { border-style: solid; background: #eddcb9; opacity: 1 !important; }
+  .shoot.busy b::after { content: "\\2026"; }
   .result b { font: 400 22px/1.2 var(--display); display:block; }
   .result p { margin: 4px 0 0; color: var(--ink-soft); font-size: 16px; }
   .result ul { list-style:none; margin: 10px 0 0; padding:0; display:grid; gap: 6px; }
@@ -160,7 +170,8 @@ export const ONBOARD_PAGE = `<!doctype html>
     .aside { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .bubble.swap, .cat.hop, .shoot.busy .ico, .med.fresh { animation: none; }
+    .bubble.swap, .cat.hop, .shoot.busy .ico, .med.fresh, .result.busy .thumb::after, .reading i { animation: none; }
+    .reading i { width: 100%; opacity: .5; }
     .stage, .btn, .copy, .paw { transition: none; }
   }
 </style>
@@ -236,9 +247,10 @@ export const ONBOARD_PAGE = `<!doctype html>
       </div>
       <input type="file" id="file" accept="image/*" hidden>
       <div class="result" id="result" role="status" aria-live="polite" hidden>
-        <img id="preview" alt="The photo you chose" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+        <div class="thumb"><img id="preview" alt="The photo you chose" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>
         <div>
           <b id="resultTitle"></b>
+          <div class="reading" id="readingBar" hidden><i></i></div>
           <p id="resultNote"></p>
           <ul id="resultList"></ul>
         </div>
@@ -377,6 +389,7 @@ function showResult(state, title, note, items) {
   var r = $("result");
   r.hidden = false;
   r.classList.toggle("busy", state === "busy");
+  $("readingBar").hidden = state !== "busy";
   $("resultTitle").textContent = title;
   $("resultNote").textContent = note || "";
   var ul = $("resultList"); ul.innerHTML = "";
@@ -387,7 +400,8 @@ function showResult(state, title, note, items) {
     var tag = document.createElement("span"); tag.className = "tag" + (it.added ? "" : " same"); tag.textContent = it.added ? "Added" : "Already in her list"; li.appendChild(tag);
     ul.appendChild(li);
   });
-  r.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (r.dataset.state !== state) r.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  r.dataset.state = state;
 }
 $("file").onchange = async function () {
   var file = this.files[0];
@@ -395,22 +409,35 @@ $("file").onchange = async function () {
   var buttons = document.querySelectorAll("[data-read]");
   buttons.forEach(function (b) { b.disabled = true; b.classList.toggle("busy", b.dataset.read === reading); });
   say(reading === "meds" ? "Let me read this. Small print, hmm." : "Let me look closely at these.", "cozy");
+  var label = {}; buttons.forEach(function (b) { label[b.dataset.read] = b.querySelector("b").textContent; if (b.dataset.read === reading) b.querySelector("b").textContent = "Kinly is reading"; });
+  var STAGES = reading === "meds"
+    ? ["Opening the photo", "Reading the names and strengths", "Working out when each one is taken", "Checking the label against itself", "Nearly there"]
+    : ["Opening the photo", "Looking at each pill", "Reading the markings", "Looking them up", "Nearly there"];
+  var began = Date.now();
+  $("preview").src = URL.createObjectURL(file);
+  function tickStatus() {
+    var s = Math.floor((Date.now() - began) / 1000);
+    showResult("busy", "Analyzing your photo", STAGES[Math.min(STAGES.length - 1, Math.floor(s / 3))]);
+  }
+  tickStatus();
+  var timer = setInterval(tickStatus, 1000);
   try {
     var data = await shrink(file);
-    $("preview").src = data;
-    showResult("busy", "Kinly is reading your photo", "This takes about ten seconds.");
     var res = await fetch(reading === "meds" ? "/api/read-meds" : "/api/read-pills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: data }) });
     var out = await res.json();
+    clearInterval(timer);
     var meds = out.meds || [];
     var items = meds.map(function (m) { return { name: m.name, slots: m.slots, added: addRead(m) }; });
     var title = meds.length === 0 ? "Kinly found no medicine in this photo" : "Kinly read " + meds.length + (meds.length === 1 ? " medicine" : " medicines") + " from this photo";
     showResult("done", title, out.note, items);
     say(out.note || "Here's what I found. Fix anything I got wrong.", meds.length ? "yay" : "worried");
   } catch (e) {
+    clearInterval(timer);
     showResult("done", "Kinly couldn't open that photo", "Try another photo, or add the medicine by hand below.");
     say("I couldn't open that photo. Try another, or type them in.", "worried");
   }
-  buttons.forEach(function (b) { b.disabled = false; b.classList.remove("busy"); });
+  clearInterval(timer);
+  buttons.forEach(function (b) { b.disabled = false; b.classList.remove("busy"); b.querySelector("b").textContent = label[b.dataset.read]; });
 };
 
 /* Reminders */
