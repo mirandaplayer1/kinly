@@ -231,6 +231,7 @@ app.get("/api/profile", (_req, res) => res.json(profileView()));
 type Setup = {
   elderName: string;
   familyName: string;
+  relation?: string;
   about?: string;
   meds?: { list: Profile["tasks"]["meds"]["list"]; times: Profile["tasks"]["meds"]["times"] };
   measure?: Profile["tasks"]["measure"];
@@ -242,6 +243,7 @@ app.post("/api/profile", (req, res) => {
   const p: Profile = structuredClone(getProfile());
   p.elderName = b.elderName.trim();
   p.familyName = b.familyName.trim();
+  p.relation = (b.relation ?? p.relation ?? "Mom").trim().slice(0, 40);
   p.about = (b.about ?? "").trim();
   if (b.meds) p.tasks.meds = { on: true, list: b.meds.list.filter((m) => m.name.trim() && m.slots.length), times: b.meds.times };
   if (b.measure) p.tasks.measure = { glucose: b.measure.glucose ?? [], pressure: b.measure.pressure ?? [] };

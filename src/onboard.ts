@@ -61,6 +61,9 @@ export const ONBOARD_PAGE = `<!doctype html>
 
   .q { display:block; margin-bottom: 26px; }
   .q > span { display:block; font-weight:700; margin-bottom: 6px; }
+  fieldset.q { border:0; padding:0; margin-left:0; margin-right:0; min-width:0; }
+  fieldset.q legend { padding:0; font-weight:700; margin-bottom: 10px; }
+  [data-p] { font-style: normal; }
   .q > small { display:block; color: var(--ink-soft); font-size: 15px; margin-top: 6px; }
   .q input, .q textarea { width:100%; font: 400 22px/1.3 var(--body); color: var(--ink); background: transparent; border:0;
                           border-bottom: 2px solid var(--ink); border-radius:0; padding: 8px 2px 10px; }
@@ -206,36 +209,37 @@ export const ONBOARD_PAGE = `<!doctype html>
   <main class="panel">
     <section class="step" data-step="0">
       <h1>Bring Kinly home</h1>
-      <p class="lede">Kinly is a small cat who keeps her company, checks in on her day, and lets you know how she's doing.</p>
-      <label class="q"><span>Who is Kinly going home to?</span><input id="elderName" type="text" placeholder="Mom" autocomplete="off"><small>The name you'd call across the kitchen. Kinly will use it too.</small></label>
+      <p class="lede">Kinly is a small cat who keeps someone you love company, checks in on their day, and lets you know how they're doing.</p>
+      <label class="q"><span>Who is Kinly going home to?</span><input id="elderName" type="text" placeholder="Margaret" autocomplete="off"><small>Their name. Kinly will use it.</small></label>
       <label class="q"><span>And you are</span><input id="familyName" type="text" placeholder="Anna" autocomplete="given-name"></label>
-      <label class="q"><span>Anything Kinly should know about her?</span><textarea id="about" placeholder="Lives alone. Loves her garden. Type 2 diabetes."></textarea><small>Optional. Health, habits, what makes her laugh.</small></label>
+      <fieldset class="q rel"><legend><span id="relLead">They are my</span></legend><div class="chips" id="relation"></div><small>So Kinly knows how to talk about the two of you.</small></fieldset>
+      <label class="q"><span>Anything Kinly should know?</span><textarea id="about" placeholder="Lives alone. Loves the garden. Type 2 diabetes."></textarea><small>Optional. Health, habits, what brings a laugh.</small></label>
       <p class="err" id="err0" role="alert"></p>
       <div class="actions"><button class="btn" data-next>Meet Kinly</button></div>
     </section>
 
     <section class="step" data-step="1" hidden>
       <h1>A day with Kinly</h1>
-      <p class="lede">Three small things, every day. <span data-her>She</span> answers with a photo or a short video, and Kinly remembers.</p>
+      <p class="lede">Three small things, every day. <i data-p="She"></i> answers with a photo or a short video, and Kinly remembers.</p>
       <ul class="day">
-        <li><svg class="ico"><use href="#i-walk"/></svg><div><b>Activity</b><p>Kinly invites her out. She sends back a few steps of her walk.</p></div></li>
-        <li><svg class="ico"><use href="#i-bowl"/></svg><div><b>Meals</b><p>Kinly is nosy about what's on her plate.</p></div></li>
-        <li><svg class="ico"><use href="#i-photo"/></svg><div><b>Daily record</b><p>One moment a day, kept. Over weeks, Kinly notices how her days change.</p></div></li>
+        <li><svg class="ico"><use href="#i-walk"/></svg><div><b>Activity</b><p>Kinly invites <i data-p="her"></i> out. <i data-p="She"></i> sends back a few steps of the walk.</p></div></li>
+        <li><svg class="ico"><use href="#i-bowl"/></svg><div><b>Meals</b><p>Kinly is nosy about what's on <i data-p="hers"></i> plate.</p></div></li>
+        <li><svg class="ico"><use href="#i-photo"/></svg><div><b>Daily record</b><p>One moment a day, kept. Over weeks, Kinly notices how <i data-p="hers"></i> days change.</p></div></li>
       </ul>
-      <p class="aside">Nothing to set up here. She tells Kinly when she likes to walk and eat, and Kinly fits around her.</p>
+      <p class="aside">Nothing to set up here. <i data-p="She"></i> tells Kinly when to walk and eat, and Kinly fits around <i data-p="her"></i>.</p>
       <div class="yours">
-        <h2>Reminders, which you can set for her</h2>
+        <h2>Reminders, which you can set for <i data-p="her"></i></h2>
         <ul class="day">
-          <li><svg class="ico"><use href="#i-pill"/></svg><div><b>Medication</b><p>Kinly nudges at the right time, and looks at the pills with her if she's unsure.</p></div></li>
-          <li><svg class="ico"><use href="#i-drop"/></svg><div><b>Blood sugar and blood pressure</b><p>Kinly asks for a photo of the meter and reads the number for her.</p></div></li>
+          <li><svg class="ico"><use href="#i-pill"/></svg><div><b>Medication</b><p>Kinly nudges at the right time, and looks at the pills with <i data-p="her"></i> when there's doubt.</p></div></li>
+          <li><svg class="ico"><use href="#i-drop"/></svg><div><b>Blood sugar and blood pressure</b><p>Kinly asks for a photo of the meter and reads the number for <i data-p="her"></i>.</p></div></li>
           <li><svg class="ico"><use href="#i-knot"/></svg><div><b>Remember this for me</b><p>Appointments, birthdays, the plumber on Tuesday.</p></div></li>
         </ul>
       </div>
-      <div class="actions"><button class="btn" data-next>Set her reminders</button><button class="quiet" data-skip>Skip, she'll tell Kinly herself</button></div>
+      <div class="actions"><button class="btn" data-next>Set <i data-p="hers"></i> reminders</button><button class="quiet" data-skip>Skip, <i data-p="will"></i> tell Kinly</button></div>
     </section>
 
     <section class="step" data-step="2" hidden>
-      <h1>Her medicines and readings</h1>
+      <h1><i data-p="Hers"></i> medicines and readings</h1>
       <p class="lede">Show Kinly the label, the pills, or both. It reads what it can, and you fix anything it got wrong.</p>
       <div class="shots" id="shots">
         <button type="button" class="shoot" data-read="meds">
@@ -259,10 +263,10 @@ export const ONBOARD_PAGE = `<!doctype html>
           <ul id="resultList"></ul>
         </div>
       </div>
-      <h2 class="listhead" id="listHead" hidden>Her medicines so far</h2>
+      <h2 class="listhead" id="listHead" hidden><i data-p="Hers"></i> medicines so far</h2>
       <div class="meds" id="meds"></div>
       <button class="quiet" id="addMed" type="button">Add one by hand</button>
-      <h2 class="listhead">Does she measure anything?</h2>
+      <h2 class="listhead">Does <i data-p="she"></i> measure anything?</h2>
       <p class="hint">Pick when Kinly should ask. Leave them empty and Kinly won't.</p>
       <div class="meds" id="measures">
         <div class="med" data-measure="glucose"><b class="mname">Blood sugar</b><div class="chips"></div></div>
@@ -278,8 +282,8 @@ export const ONBOARD_PAGE = `<!doctype html>
     </section>
 
     <section class="step" data-step="3" hidden>
-      <h1>Remember this for her</h1>
-      <p class="lede">Anything coming up that she shouldn't have to hold in her head. She can add more herself, just by telling Kinly.</p>
+      <h1>Remember this for <i data-p="her"></i></h1>
+      <p class="lede">Anything coming up that <i data-p="she"></i> shouldn't have to hold in mind. <i data-p="She"></i> can add more, just by telling Kinly.</p>
       <p class="empty" id="noNotes">Nothing yet. That's fine too.</p>
       <div class="meds" id="notes"></div>
       <button class="quiet" id="addNote" type="button">Add a reminder</button>
@@ -289,11 +293,11 @@ export const ONBOARD_PAGE = `<!doctype html>
 
     <section class="step" data-step="4" hidden>
       <h1>Kinly is ready</h1>
-      <p class="lede">Send her the first link. When she opens it, Kinly says hello.</p>
-      <div class="send first"><span class="who" id="whoElder">For her</span><span class="why">Opens her chat with Kinly.</span><div class="go"><a id="l_elder" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_elder">Copy link</button></div></div>
-      <div class="send"><span class="who">For family</span><span class="why">Ask Kinly how she's doing, or send her your love through it.</span><div class="go"><a id="l_family" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_family">Copy link</button></div></div>
-      <div class="send"><span class="who">For her caregiver or care center</span><span class="why">They hear from Kinly only when something needs a professional.</span><div class="go"><a id="l_care" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_care">Copy link</button></div></div>
-      <div class="actions"><a class="btn" id="l_page" style="text-decoration:none">See her day</a><button class="quiet" data-goto="0">Change something</button></div>
+      <p class="lede">Send <i data-p="her"></i> the first link. When it's opened, Kinly says hello.</p>
+      <div class="send first"><span class="who" id="whoElder">For her</span><span class="why">Opens <i data-p="hers"></i> chat with Kinly.</span><div class="go"><a id="l_elder" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_elder">Copy link</button></div></div>
+      <div class="send"><span class="who">For family</span><span class="why">Ask Kinly how <i data-p="is"></i> doing, or send your love through it.</span><div class="go"><a id="l_family" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_family">Copy link</button></div></div>
+      <div class="send"><span class="who">For <i data-p="hers"></i> caregiver or care center</span><span class="why">They hear from Kinly only when something needs a professional.</span><div class="go"><a id="l_care" target="_blank" rel="noopener"></a><button class="copy" data-copy="l_care">Copy link</button></div></div>
+      <div class="actions"><a class="btn" id="l_page" style="text-decoration:none">See <i data-p="hers"></i> day</a><button class="quiet" data-goto="0">Change something</button></div>
     </section>
   </main>
 </div>
@@ -304,12 +308,28 @@ var SLOTS = ["morning", "noon", "evening", "bedtime"];
 var STAGE = [
   { color: "var(--mustard)", cat: "hello", say: function () { return "Hello! I'm Kinly. Who am I going home to?"; } },
   { color: "var(--apricot)", cat: "cozy", say: function () { var n = $("elderName").value.trim(); return n ? "Here's what " + n + " and I will get up to." : "Here's what the two of us will get up to."; } },
-  { color: "var(--rose)", cat: "happy", say: function () { return "Show me her medicines. I'm a careful reader."; } },
-  { color: "var(--sky)", cat: "love", say: function () { return "What should I remember for her?"; } },
+  { color: "var(--rose)", cat: "happy", say: function () { return "Show me " + pron("hers") + " medicines. I'm a careful reader."; } },
+  { color: "var(--sky)", cat: "love", say: function () { return "What should I remember for " + pron("her") + "?"; } },
   { color: "var(--leaf)", cat: "yay", say: function () { return "I'm ready! Send me to " + her() + "."; } }
 ];
 var step = 0, reached = 0;
 function her() { return $("elderName").value.trim() || "her"; }
+var RELATIONS = [["Mom", "she"], ["Dad", "he"], ["Grandma", "she"], ["Grandpa", "he"], ["Wife", "she"], ["Husband", "he"], ["Aunt", "she"], ["Uncle", "he"], ["Friend", "name"], ["Someone I care for", "name"]];
+var WORDS = {
+  she: { she: "she", She: "She", her: "her", hers: "her", Hers: "Her", is: "she's", will: "she'll" },
+  he: { she: "he", She: "He", her: "him", hers: "his", Hers: "His", is: "he's", will: "he'll" }
+};
+function relation() { var c = document.querySelector("#relation input:checked"); return c ? c.value : "Mom"; }
+// The word for a slot ("she", "her", "hers"...), from the relationship. Where the relationship
+// does not say, the name stands in, so nothing is assumed.
+function pron(key) {
+  var kind = (RELATIONS.filter(function (r) { return r[0] === relation(); })[0] || [])[1];
+  if (WORDS[kind]) return WORDS[kind][key];
+  var n = $("elderName").value.trim() || "them";
+  return { she: n, She: n, her: n, hers: n + "'s", Hers: n + "'s", is: n + " is", will: n + " will" }[key];
+}
+function applyNames() { document.querySelectorAll("[data-p]").forEach(function (e) { e.textContent = pron(e.dataset.p); }); }
+$("relation").innerHTML = RELATIONS.map(function (r, i) { return '<label class="chip"><input type="radio" name="relation" value="' + r[0] + '"' + (i === 0 ? " checked" : "") + '><span>' + r[0] + '</span></label>'; }).join("");
 
 function say(text, cat) {
   var b = $("bubble"), c = $("cat");
@@ -320,7 +340,7 @@ function say(text, cat) {
 
 function drawTrail() {
   $("trail").innerHTML = "";
-  ["Who", "Her day", "Medicines", "Reminders", "Share"].forEach(function (name, i) {
+  ["Who", "The day", "Medicines", "Reminders", "Share"].forEach(function (name, i) {
     var b = document.createElement("button");
     b.className = "paw" + (i <= step ? " on" : "");
     b.disabled = i > reached;
@@ -336,7 +356,7 @@ function go(n, quiet) {
   document.querySelectorAll(".step").forEach(function (s) { s.hidden = Number(s.dataset.step) !== n; });
   $("stage").style.setProperty("--stage", STAGE[n].color);
   say(STAGE[n].say(), STAGE[n].cat);
-  document.querySelectorAll("[data-her]").forEach(function (e) { e.textContent = $("elderName").value.trim() || "She"; });
+  applyNames();
   drawTrail();
   if (quiet) return;
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -414,7 +434,7 @@ function showResult(state, title, note, items) {
     var li = document.createElement("li");
     var name = document.createElement("span"); name.textContent = it.name; li.appendChild(name);
     var when = document.createElement("small"); when.textContent = it.slots.map(cap).join(", "); li.appendChild(when);
-    var tag = document.createElement("span"); tag.className = "tag" + (it.added ? "" : " same"); tag.textContent = it.added ? "Added" : "Already in her list"; li.appendChild(tag);
+    var tag = document.createElement("span"); tag.className = "tag" + (it.added ? "" : " same"); tag.textContent = it.added ? "Added" : "Already in the list"; li.appendChild(tag);
     ul.appendChild(li);
   });
   if (r.dataset.state !== state) r.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -476,7 +496,7 @@ function collect() {
   var times = {};
   SLOTS.forEach(function (s) { times[s] = $("t_" + s).value; });
   return {
-    elderName: $("elderName").value.trim(), familyName: $("familyName").value.trim(), about: $("about").value.trim(),
+    elderName: $("elderName").value.trim(), familyName: $("familyName").value.trim(), relation: relation(), about: $("about").value.trim(),
     meds: {
       list: Array.from(document.querySelectorAll("#meds .med")).map(function (el) {
         return { name: el.querySelector("input[type=text]").value.trim(), slots: Array.from(el.querySelectorAll(".chip input:checked")).map(function (c) { return c.value; }) };
@@ -532,11 +552,16 @@ document.querySelectorAll(".copy").forEach(function (b) {
     var was = b.textContent; b.textContent = "Copied"; setTimeout(function () { b.textContent = was; }, 1400);
   };
 });
-$("elderName").addEventListener("input", function () { if (step === 0 && this.value.trim()) $("bubble").textContent = "Oh, " + this.value.trim() + "! I like her already."; });
+$("elderName").addEventListener("input", function () { if (step === 0 && this.value.trim()) $("bubble").textContent = "Oh, " + this.value.trim() + "! What a lovely name."; $("relLead").textContent = (this.value.trim() || "They") + (this.value.trim() ? " is my" : " are my"); });
 
 fetch("/api/profile").then(function (r) { return r.json(); }).then(function (out) {
   var p = out.profile;
-  if (out.onboarded) { $("elderName").value = p.elderName; $("familyName").value = p.familyName; $("about").value = p.about; reached = 4; }
+  if (out.onboarded) {
+    $("elderName").value = p.elderName; $("familyName").value = p.familyName; $("about").value = p.about; reached = 4;
+    document.querySelectorAll("#relation input").forEach(function (c) { c.checked = c.value === p.relation; });
+    if (!document.querySelector("#relation input:checked")) document.querySelector("#relation input").checked = true;
+    $("relLead").textContent = p.elderName + " is my";
+  }
   if (out.onboarded) p.tasks.meds.list.forEach(medRow);
   SLOTS.forEach(function (s) { $("t_" + s).value = p.tasks.meds.times[s]; });
   (out.reminders || []).forEach(noteRow);

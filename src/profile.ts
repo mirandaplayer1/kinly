@@ -6,8 +6,9 @@ export type Slot = "morning" | "noon" | "evening" | "bedtime";
 export const SLOTS: Slot[] = ["morning", "noon", "evening", "bedtime"];
 
 export type Profile = {
-  elderName: string; // what Kinly calls her
+  elderName: string; // her name; Kinly uses it
   familyName: string; // who set Kinly up
+  relation: string; // what she is to the family member: "Mom", "Dad", "Grandma", "Friend"...
   about: string; // anything Kinly should know: conditions, lives alone, likes
   tasks: {
     activity: { on: boolean; time: string; what: string };
@@ -20,8 +21,9 @@ export type Profile = {
 };
 
 export const DEFAULT_PROFILE: Profile = {
-  elderName: "Mom",
+  elderName: "Margaret",
   familyName: "Anna",
+  relation: "Mom",
   about: "Type 2 diabetes and high blood pressure. Lives alone.",
   tasks: {
     activity: { on: true, time: "10:00", what: "a walk" },
@@ -68,6 +70,7 @@ export const today = (d = new Date()) =>
 export const clock = (d = new Date()) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
 let profile = read<Profile>("profile.json");
+if (profile && !profile.relation) profile.relation = "Mom"; // saved before relationships existed
 if (profile && !profile.tasks.measure) profile.tasks.measure = { glucose: [], pressure: [] }; // saved before measurements existed
 export const onboarded = () => profile !== null;
 export const getProfile = (): Profile => profile ?? DEFAULT_PROFILE;
