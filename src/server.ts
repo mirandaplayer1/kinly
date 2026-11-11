@@ -1,6 +1,5 @@
-// Kinly's switchboard: WhatsApp with her and her care circle, the live camera page,
+// Kinly's switchboard: chat with her and her care circle (Telegram or WhatsApp), the live camera page,
 // the phone call on a red moment, and the family page.
-// Twilio waits only ~15 s for a webhook, so WhatsApp is answered at once and Kinly's reply follows.
 import "dotenv/config";
 import express from "express";
 import twilio from "twilio";
@@ -8,42 +7,56 @@ import { withHer, withCircle, reachOut, onThePhone, type Incoming, type CallTurn
 import { addEvent, todaysEvents } from "./store.js";
 import { FAMILY_PAGE } from "./family.js";
 import { SEE_PAGE } from "./see.js";
+import { telegramOn, tgText, tgPicture, tgListen } from "./telegram.js";
 
 const {
   TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN,
   TWILIO_WHATSAPP_FROM,
   TWILIO_VOICE_FROM, // a Twilio phone number, e.g. +15551234567. Without it Kinly does not call.
-  PUBLIC_URL, // the ngrok https URL: needed for calls and for the camera link
-  ELDER_WHATSAPP, // her number, e.g. whatsapp:+886912345678. If unset, the first person to write is her.
+  PUBLIC_URL, // the ngrok https URL: needed for WhatsApp pictures, calls, and the camera link
+  ELDER_WHATSAPP, // her address: "whatsapp:+886..." or "tg:<chat id>". If unset, the first person to write is her.
   FAMILY_WHATSAPP_TO,
   CARE_WHATSAPP_TO,
   QUIET_MINUTES, // if set, Kinly says "I miss you" after this many quiet minutes
   PORT = "3000",
 } = process.env;
-if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-  throw new Error("Fill in TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM in .env");
-}
-const tw = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+const twilioOn = Boolean(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_WHATSAPP_FROM);
+if (!twilioOn && !telegramOn) throw new Error("Set TELEGRAM_BOT_TOKEN, or the three TWILIO_ values, in .env");
+const tw = twilioOn ? twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : undefined;
 const VOICE = "Polly.Joanna-Neural";
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 type ImageType = (typeof IMAGE_TYPES)[number];
 
-let elder: string | undefined = ELDER_WHATSAPP;
+// With Telegram on, a WhatsApp address left in .env is ignored until she writes from Telegram.
+let elder: string | undefined = telegramOn && !ELDER_WHATSAPP?.startsWith("tg:") ? undefined : ELDER_WHATSAPP;
 let mood: Mood = "cozy"; // how Kinly feels right now
 let shownMood: Mood | undefined; // the last picture of Kinly she was sent
 let lastHeard = Date.now(); // when she last wrote or showed something
 let missedHer = false; // one "I miss you" per quiet stretch
 
-const send = (to: string, body: string) => tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to, body });
+// One way to send, whichever channel the address belongs to.
+async function send(to: string, body: string, picture?: Mood) {
+  if (to.startsWith("tg:")) {
+    return picture ? tgPicture(to, body, `pet/${picture}.png`) : tgText(to, body);
+  }
+  if (!tw) throw new Error(`No WhatsApp channel configured for ${to}`);
+  const mediaUrl = picture && PUBLIC_URL ? [`${PUBLIC_URL}/pet/${picture}.png`] : undefined;
+  return tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to, body, mediaUrl });
+}
+
+// With one phone, family and care-team messages land in the same chat, labelled, so every route is visible.
+const toFamily = async (body: string) => { const to = FAMILY_WHATSAPP_TO || elder; if (to) await send(to, body); };
+const toCare = async (body: string) => { const to = CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder; if (to) await send(to, body); };
 
 // To her, Kinly has a face. A picture goes along when Kinly's mood changes, or always when asked.
 async function sayToHer(body: string, feeling: Mood, withPicture = false) {
   if (!elder) return;
   mood = feeling;
-  const picture = PUBLIC_URL && (withPicture || feeling !== shownMood) ? [`${PUBLIC_URL}/pet/${feeling}.png`] : undefined;
+  const picture = withPicture || feeling !== shownMood ? feeling : undefined;
   if (picture) shownMood = feeling;
-  await tw.messages.create({ from: TWILIO_WHATSAPP_FROM, to: elder, body, mediaUrl: picture });
+  await send(elder, body, picture);
 }
 
 async function reach(reason: Reason) {
@@ -52,19 +65,8 @@ async function reach(reason: Reason) {
   console.log(`-> her (${reason}): ${out.message}`);
   return out.message;
 }
-// With one phone, family and care-team messages land in the same chat, labelled, so every route is visible.
-const toFamily = (body: string) => (FAMILY_WHATSAPP_TO || elder) && send((FAMILY_WHATSAPP_TO || elder)!, body);
-const toCare = (body: string) => (CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder) && send((CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder)!, body);
 
-async function downloadImage(url: string, type: string): Promise<Incoming["image"]> {
-  if (!IMAGE_TYPES.includes(type as ImageType)) return undefined;
-  const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64");
-  const res = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
-  if (!res.ok) throw new Error(`Media download failed: ${res.status}`);
-  return { data: Buffer.from(await res.arrayBuffer()).toString("base64"), mediaType: type as ImageType };
-}
-
-// Who is writing? Known numbers first; a "family:" or "care:" prefix lets one phone play every part.
+// Who is writing? Known addresses first; a "family:" or "care:" prefix lets one phone play every part.
 function roleOf(from: string, text: string): { role: "elder" | Role; text: string } {
   const m = text.match(/^\s*(family|care)\s*:\s*/i);
   if (m) return { role: m[1].toLowerCase() as Role, text: text.slice(m[0].length) };
@@ -73,7 +75,7 @@ function roleOf(from: string, text: string): { role: "elder" | Role; text: strin
   return { role: "elder", text };
 }
 
-// ---------- Her side: one path for WhatsApp and the camera ----------
+// ---------- Her side: one path for chat and the camera ----------
 
 async function herMoment(msg: Incoming): Promise<ElderVerdict> {
   lastHeard = Date.now();
@@ -97,14 +99,39 @@ async function herMoment(msg: Incoming): Promise<ElderVerdict> {
   return v;
 }
 
-// ---------- Phone call ----------
+// A message from anyone in the circle, on any channel.
+async function onMessage(from: string, rawText: string, image?: Incoming["image"]) {
+  const { role, text } = roleOf(from, rawText);
+  console.log(`<- ${role} ${from}: ${text || "(photo)"}`);
+  try {
+    if (role === "elder") {
+      elder ??= from;
+      const v = await herMoment({ text, image });
+      await sayToHer(v.reply, v.mood);
+      return;
+    }
+    const c = await withCircle(role, text);
+    addEvent({ kind: role, level: "green", summary: c.log });
+    await send(from, `Kinly → ${role === "family" ? "family" : "care team"}\n${c.reply}`);
+    console.log(`-> ${role}: ${c.reply}`);
+    if (c.to_her && elder) {
+      await sayToHer(c.to_her, role === "family" ? "happy" : "cozy");
+      console.log(`-> her (passed on): ${c.to_her}`);
+    }
+  } catch (err) {
+    console.error(err);
+    await send(from, "Sorry, something went wrong on my side. Please send it again.").catch(() => {});
+  }
+}
+
+// ---------- Phone call (Twilio voice) ----------
 
 type Call = { reason: string; turns: CallTurn[] };
 const calls = new Map<string, Call>();
 const MAX_HER_TURNS = 3;
 
 async function ringHer(reason: string) {
-  if (!TWILIO_VOICE_FROM || !PUBLIC_URL || !elder) return;
+  if (!tw || !TWILIO_VOICE_FROM || !PUBLIC_URL || !elder?.startsWith("whatsapp:")) return;
   const call = await tw.calls.create({ to: elder.replace("whatsapp:", ""), from: TWILIO_VOICE_FROM, url: `${PUBLIC_URL}/voice` });
   calls.set(call.sid, { reason, turns: [] });
   console.log(`=> calling her (${call.sid})`);
@@ -158,34 +185,20 @@ app.get("/api/events", (_req, res) => res.json(todaysEvents()));
 app.get("/api/state", (_req, res) => res.json({ mood }));
 app.use("/pet", express.static("pet", { maxAge: "1h" }));
 
+// WhatsApp via Twilio. Twilio waits only ~15 s, so answer at once and reply afterwards.
 app.post("/whatsapp", (req, res) => {
   res.type("text/xml").send("<Response></Response>");
-  const from: string = req.body.From;
-  const numMedia = Number(req.body.NumMedia ?? 0);
-  const { role, text } = roleOf(from, req.body.Body ?? "");
-  console.log(`<- ${role} ${from}: ${text || "(photo)"}`);
-
   (async () => {
-    if (role === "elder") {
-      elder ??= from;
-      const image = numMedia > 0 ? await downloadImage(req.body.MediaUrl0, req.body.MediaContentType0) : undefined;
-      const v = await herMoment({ text, image });
-      await sayToHer(v.reply, v.mood);
-      return;
+    let image: Incoming["image"];
+    const type: string = req.body.MediaContentType0 ?? "";
+    if (Number(req.body.NumMedia ?? 0) > 0 && IMAGE_TYPES.includes(type as ImageType)) {
+      const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64");
+      const media = await fetch(req.body.MediaUrl0, { headers: { Authorization: `Basic ${auth}` } });
+      if (!media.ok) throw new Error(`Media download failed: ${media.status}`);
+      image = { data: Buffer.from(await media.arrayBuffer()).toString("base64"), mediaType: type as ImageType };
     }
-    // Family or care team writing to Kinly.
-    const c = await withCircle(role, text);
-    addEvent({ kind: role, level: "green", summary: c.log });
-    await send(from, c.reply);
-    console.log(`-> ${role}: ${c.reply}`);
-    if (c.to_her && elder) {
-      await sayToHer(c.to_her, role === "family" ? "happy" : "cozy");
-      console.log(`-> her (passed on): ${c.to_her}`);
-    }
-  })().catch(async (err) => {
-    console.error(err);
-    await send(from, "Sorry, something went wrong on my side. Please send it again.").catch(() => {});
-  });
+    await onMessage(req.body.From, req.body.Body ?? "", image);
+  })().catch(console.error);
 });
 
 // The live camera: a frame plus what she said. Kinly's answer is spoken by the page.
@@ -207,12 +220,21 @@ app.all("/nudge/:reason", async (req, res) => {
   try {
     const reason = req.params.reason as Reason;
     if (!REASONS.includes(reason)) return res.status(404).send(`Try one of: ${REASONS.join(", ")}`);
-    if (!elder) return res.status(400).send("I don't know her number yet. Set ELDER_WHATSAPP, or have her message Kinly once.");
+    if (!elder) return res.status(400).send("I don't know her yet. Have her message Kinly once.");
     res.send(`Sent: ${await reach(reason)}`);
   } catch (err) {
     console.error(err);
     res.status(500).send(String(err));
   }
+});
+
+app.post("/voice", (req, res) => {
+  callStep(req, res).catch((err) => {
+    console.error(err);
+    const vr = new twilio.twiml.VoiceResponse();
+    vr.say({ voice: VOICE }, "I'm having trouble hearing you. I'm asking your family to call you now. Goodbye.");
+    res.type("text/xml").send(vr.toString());
+  });
 });
 
 // A quiet day: Kinly misses her, once, and says so.
@@ -224,16 +246,9 @@ if (QUIET_MINUTES) {
   }, 30_000);
 }
 
-app.post("/voice", (req, res) => {
-  callStep(req, res).catch((err) => {
-    console.error(err);
-    const vr = new twilio.twiml.VoiceResponse();
-    vr.say({ voice: VOICE }, "I'm having trouble hearing you. I'm asking your family to call you now. Goodbye.");
-    res.type("text/xml").send(vr.toString());
-  });
-});
+if (telegramOn) tgListen((m) => onMessage(m.from, m.text, m.image)).catch(console.error);
 
 app.listen(Number(PORT), () => {
   console.log(`Kinly on http://localhost:${PORT}  ·  /family  ·  /see  ·  /nudge/hello`);
-  console.log(TWILIO_VOICE_FROM && PUBLIC_URL ? "Phone calls: on" : "Phone calls: off (set TWILIO_VOICE_FROM and PUBLIC_URL)");
+  console.log(`Channels: ${[telegramOn && "Telegram", twilioOn && "WhatsApp (Twilio)"].filter(Boolean).join(", ")}`);
 });
