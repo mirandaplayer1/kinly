@@ -92,5 +92,11 @@ export function softFindPill(name: string): Pill | null {
   const strength = rest.join("").match(/\d+(?:\.\d+)?MG/)?.[0];
   const sameBrand = names.filter((n) => n.toUpperCase().split(/[\s"]+/)[0] === brand);
   const sameStrength = strength ? sameBrand.filter((n) => n.toUpperCase().replace(/\s+/g, "").includes(strength)) : [];
-  return only(sameStrength.length ? sameStrength : sameBrand);
+  if (sameStrength.length) return only(sameStrength);
+  // Some product names leave the strength out, but the tablet is stamped with it ("GL 500").
+  const digits = strength?.replace("MG", "");
+  const stamped = digits
+    ? rows.filter((r) => sameBrand.includes(r.英文品名) && `${r.標註一 ?? ""} ${r.標註二 ?? ""}`.replace(/\s+/g, "").includes(digits)).map((r) => r.英文品名)
+    : [];
+  return only(stamped.length ? stamped : sameBrand);
 }
