@@ -5,10 +5,13 @@ export const SEE_PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Show Kinly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin:0; height:100%; background:#14110e; color:#fff;
-               font: 20px/1.4 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; overflow:hidden; }
+               font: 20px/1.4 "Geist", "Helvetica Neue", Arial, sans-serif; overflow:hidden; }
   video { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; }
   .top { position:fixed; top:0; left:0; right:0; padding: calc(14px + env(safe-area-inset-top)) 18px 30px;
          background: linear-gradient(#000a, #0000); display:flex; align-items:center; gap:10px; font-weight:600; }
@@ -18,9 +21,9 @@ export const SEE_PAGE = `<!doctype html>
   .bottom { position:fixed; left:0; right:0; bottom:0; padding: 60px 18px calc(22px + env(safe-area-inset-bottom));
             background: linear-gradient(#0000, #000c 45%); }
   #said { color:#ffffffb3; font-size:17px; min-height:24px; margin-bottom:8px; }
-  #caption { font-size:24px; font-weight:600; line-height:1.3; min-height:62px; margin-bottom:18px; text-wrap:balance; }
+  #caption { font: 600 26px/1.2 "Bricolage Grotesque", sans-serif; letter-spacing:-0.025em; min-height:62px; margin-bottom:18px; text-wrap:balance; }
   .row { display:flex; gap:12px; }
-  button { flex:1; border:0; border-radius:999px; padding:18px 10px; font:inherit; font-weight:700; color:#14110e;
+  button { flex:1; border:0; border-radius:16px; padding:18px 10px; font:inherit; font-weight:600; color:#14110e;
            background:#f6c56b; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
   button.ghost { flex:0 0 34%; background:#ffffff26; color:#fff; backdrop-filter: blur(8px); }
   button.on { background:#fff; transform: scale(.97); }

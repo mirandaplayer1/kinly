@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinly · style directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Young+Serif&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#e9e7e2; color:#161616; font: 16px/1.5 "Geist", -apple-system, sans-serif; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 36px 20px 80px; }
+  .page > h1 { font: 600 30px/1.1 "Geist", sans-serif; letter-spacing:-0.02em; margin: 0 0 6px; }
+  .page > p { margin: 0 0 34px; color:#55524c; max-width: 62ch; }
+  .dir { margin-bottom: 54px; }
+  .dir header { display:flex; align-items:baseline; gap: 14px; flex-wrap:wrap; margin-bottom: 12px; }
+  .dir header b { font: 600 22px/1.2 "Geist", sans-serif; letter-spacing:-0.01em; }
+  .dir header span { color:#55524c; }
+  .notes { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 28px; margin-top: 14px; font-size: 15px; color:#33312d; }
+  .notes b { color:#161616; }
+  .sw { display:flex; gap:6px; margin-left:auto; }
+  .sw i { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #0002; }
+
+  /* A shared skeleton for the mock: stage on the left, answers on the right, components below. */
+  .mock { display:grid; grid-template-columns: 5fr 6fr; border-radius: 18px; overflow:hidden; box-shadow: 0 24px 50px -30px #000a; min-height: 470px; }
+  .stage { padding: 30px; display:grid; grid-template-rows: auto 1fr auto; }
+  .scene { display:grid; justify-items:center; align-content:center; gap: 10px; }
+  .scene img { width: 210px; height: 210px; object-fit: contain; }
+  .panel { padding: 44px 48px; display:grid; align-content:center; gap: 0; }
+  .choices { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0 26px; }
+  .parts { grid-column: 1 / -1; display:grid; grid-template-columns: 1.2fr 1fr; gap: 28px; padding: 26px 48px 30px; align-items:start; }
+  .chips { display:flex; gap: 8px; flex-wrap:wrap; margin-top: 10px; }
+  @media (max-width: 820px) { .mock, .parts { grid-template-columns: 1fr; } .panel, .parts { padding: 28px 22px; } }
+
+  /* ---------- Now: Storybook ---------- */
+  .now { background:#fbf3e4; color:#3b2f2a; font-family: "Atkinson Hyperlegible", sans-serif; }
+  .now .stage { background:#e0a526; }
+  .now .mark { font: 400 22px/1 "Young Serif", serif; }
+  .now .bubble { background:#fbf3e4; border-radius: 24px; padding: 16px 20px; font: 400 24px/1.18 "Young Serif", serif; max-width: 16ch; box-shadow: 0 14px 30px -18px #3b2f2a8c; }
+  .now h2 { font: 400 46px/1.05 "Young Serif", serif; letter-spacing:-0.025em; margin: 0 0 10px; }
+  .now .lede { color:#6a574c; margin:0; }
+  .now .choice { border: 2px solid #3b2f2a; border-radius: 18px; padding: 16px 18px; }
+  .now .choice b { display:block; font: 400 22px/1.15 "Young Serif", serif; }
+  .now .choice small { color:#6a574c; }
+  .now .choice.on { background:#3b2f2a; color:#fbf3e4; } .now .choice.on small { color:#e9dcc6; }
+  .now .btn { justify-self:start; background:#3b2f2a; color:#fbf3e4; font-weight:700; border-radius:999px; padding: 16px 26px; }
+  .now .parts { border-top: 1.5px dashed #dfcfb1; }
+  .now .med b { font-weight:700; font-size: 18px; border-bottom: 2px solid #dfcfb1; display:block; padding-bottom: 6px; }
+  .now .chip { border: 2px solid #3b2f2a; border-radius:999px; padding: 6px 14px; font-size: 14px; font-weight:700; }
+  .now .chip.on { background:#3b2f2a; color:#fbf3e4; }
+  .now .status { border: 2px dashed #3b2f2a; border-radius: 18px; padding: 14px 16px; background:#fff8ea; }
+  .now .status b { font: 400 20px/1.2 "Young Serif", serif; }
+  .now .bar { height: 8px; border-radius:999px; background:#f3e6cc; margin: 10px 0 4px; } .now .bar i { display:block; width: 42%; height:100%; border-radius:999px; background:#3b2f2a; }
+  .now .dots i { background:#3b2f2a47; } .now .dots i.on { background:#3b2f2a; }
+
+  /* ---------- A: Night shift ---------- */
+  .a { background:#0c0f0d; color:#f1efe8; font-family: "Geist", sans-serif; }
+  .a .stage { background:#0c0f0d; border-right: 1px solid #ffffff1f; }
+  .a .mark { font: 700 20px/1 "Bricolage Grotesque", sans-serif; letter-spacing:-0.02em; }
+  .a .tile { width: 250px; height: 250px; border-radius: 44px; background:#f6efe0; display:grid; place-items:center; box-shadow: 0 30px 60px -30px #c8ff4d66; }
+  .a .tile img { width: 200px; height: 200px; }
+  .a .bubble { font: 500 22px/1.25 "Bricolage Grotesque", sans-serif; letter-spacing:-0.015em; max-width: 20ch; text-align:center; color:#f1efe8; }
+  .a .bubble em { font-style: normal; color:#c8ff4d; }
+  .a h2 { font: 700 60px/0.95 "Bricolage Grotesque", sans-serif; letter-spacing:-0.04em; margin: 0 0 14px; }
+  .a .lede { color:#a9aca4; margin:0; max-width: 40ch; }
+  .a .choice { border: 1px solid #ffffff33; border-radius: 14px; padding: 16px 18px; }
+  .a .choice b { display:block; font: 600 20px/1.2 "Geist", sans-serif; letter-spacing:-0.01em; }
+  .a .choice small { color:#a9aca4; }
+  .a .choice.on { border-color:#c8ff4d; background:#c8ff4d14; box-shadow: inset 0 0 0 1px #c8ff4d; }
+  .a .btn { justify-self:start; background:#c8ff4d; color:#0c0f0d; font-weight:600; border-radius: 12px; padding: 15px 22px; }
+  .a .parts { border-top: 1px solid #ffffff1f; }
+  .a .med b { font-weight:600; font-size: 18px; display:block; padding-bottom: 8px; border-bottom: 1px solid #ffffff33; }
+  .a .chip { border: 1px solid #ffffff40; border-radius: 8px; padding: 6px 12px; font-size: 14px; color:#d6d8d0; }
+  .a .chip.on { background:#f1efe8; color:#0c0f0d; border-color:#f1efe8; font-weight:600; }
+  .a .status { border: 1px solid #c8ff4d66; border-radius: 14px; padding: 14px 16px; background:#c8ff4d0f; }
+  .a .status b { font: 600 18px/1.2 "Geist", sans-serif; }
+  .a .status span { color:#a9aca4; font-size: 14px; }
+  .a .bar { height: 4px; border-radius:999px; background:#ffffff1f; margin: 12px 0 6px; } .a .bar i { display:block; width: 42%; height:100%; border-radius:999px; background:#c8ff4d; }
+  .a .dots i { background:#ffffff33; } .a .dots i.on { background:#c8ff4d; }
+
+  /* ---------- B: Daylight ---------- */
+  .b { background:#fffdf8; color:#141414; font-family: "Geist", sans-serif; }
+  .b .stage { background:#ff4a1c; color:#141414; }
+  .b .mark { font: 400 26px/1 "Instrument Serif", serif; }
+  .b .bubble { font: 400 34px/1.05 "Instrument Serif", serif; letter-spacing:-0.01em; max-width: 14ch; text-align:center; color:#141414; }
+  .b .bubble em { font-style: italic; }
+  .b h2 { font: 400 76px/0.92 "Instrument Serif", serif; letter-spacing:-0.03em; margin: 0 0 16px; }
+  .b h2 em { font-style: italic; color:#ff4a1c; }
+  .b .lede { color:#5a5852; margin:0; max-width: 40ch; }
+  .b .choice { border: 1.5px solid #141414; border-radius: 4px; padding: 16px 18px; }
+  .b .choice b { display:block; font: 500 20px/1.2 "Geist", sans-serif; letter-spacing:-0.01em; }
+  .b .choice small { color:#5a5852; }
+  .b .choice.on { background:#141414; color:#fffdf8; } .b .choice.on small { color:#c9c6bd; }
+  .b .btn { justify-self:start; background:#ff4a1c; color:#141414; font-weight:600; border-radius: 4px; padding: 15px 24px; }
+  .b .parts { border-top: 1.5px solid #141414; }
+  .b .med b { font-weight:500; font-size: 18px; display:block; padding-bottom: 8px; border-bottom: 1.5px solid #141414; }
+  .b .chip { border: 1.5px solid #141414; border-radius: 999px; padding: 5px 13px; font-size: 14px; }
+  .b .chip.on { background:#ff4a1c; border-color:#ff4a1c; font-weight:600; }
+  .b .status { border: 1.5px solid #141414; border-radius: 4px; padding: 14px 16px; }
+  .b .status b { font: 400 24px/1.1 "Instrument Serif", serif; }
+  .b .status span { color:#5a5852; font-size: 14px; }
+  .b .bar { height: 3px; background:#1414141f; margin: 12px 0 6px; } .b .bar i { display:block; width: 42%; height:100%; background:#ff4a1c; }
+  .b .dots i { background:#14141440; } .b .dots i.on { background:#141414; }
+
+  .dots { display:flex; gap: 8px; } .dots i { width: 22px; height: 5px; border-radius: 999px; display:block; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Kinly: three ways it could look</h1>
+  <p>The same first screen and the same two components, drawn three ways. The top one is what's built today. Pick A or B, or tell me what to mix.</p>
+
+  <!-- NOW -->
+  <section class="dir">
+    <header><b>Now · Storybook</b><span>Warm, retro, picture-book.</span><div class="sw"><i style="background:#e0a526"></i><i style="background:#fbf3e4"></i><i style="background:#3b2f2a"></i></div></header>
+    <div class="mock now">
+      <div class="stage"><div class="mark">Kinly</div>
+        <div class="scene"><div class="bubble">Hello! I'm Kinly. Who needs a cat?</div><img src="../pet/sticker_hello.webp" alt=""></div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="panel"><h2>Bring Kinly home</h2><p class="lede">A small cat who keeps you company, checks in on the day, and remembers what you'd rather not have to.</p>
+        <div class="choices"><div class="choice on"><b>Someone I love</b><small>I'll set Kinly up for them</small></div><div class="choice"><b>Me</b><small>I'm setting Kinly up for myself</small></div></div>
+        <div class="btn">Meet Kinly</div></div>
+      <div class="parts"><div class="med"><b>NORVASC 5 MG TABLET</b><div class="chips"><span class="chip on">Morning</span><span class="chip">Noon</span><span class="chip">Evening</span><span class="chip">Bedtime</span></div></div>
+        <div class="status"><b>Analyzing your photo</b><div class="bar"><i></i></div><span>Reading the names and strengths</span></div></div>
+    </div>
+    <div class="notes"><div><b>Feels like:</b> a children's book. Kind, safe, a little nostalgic.</div><div><b>Risk for YC:</b> reads as a consumer toy before it reads as a company.</div></div>
+  </section>
+
+  <!-- A -->
+  <section class="dir">
+    <header><b>A · Night shift</b><span>Dark, sharp, one electric color. Kinly is the only warm thing on screen.</span><div class="sw"><i style="background:#0c0f0d"></i><i style="background:#c8ff4d"></i><i style="background:#f6efe0"></i></div></header>
+    <div class="mock a">
+      <div class="stage"><div class="mark">Kinly</div>
+        <div class="scene"><div class="tile"><img src="../pet/sticker_hello.webp" alt=""></div><div class="bubble">Hello, I'm Kinly. <em>Who needs a cat?</em></div></div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="panel"><h2>Bring Kinly home</h2><p class="lede">A small cat who keeps you company, checks in on the day, and remembers what you'd rather not have to.</p>
+        <div class="choices"><div class="choice on"><b>Someone I love</b><small>I'll set Kinly up for them</small></div><div class="choice"><b>Me</b><small>I'm setting Kinly up for myself</small></div></div>
+        <div class="btn">Meet Kinly</div></div>
+      <div class="parts"><div class="med"><b>NORVASC 5 MG TABLET</b><div class="chips"><span class="chip on">Morning</span><span class="chip">Noon</span><span class="chip">Evening</span><span class="chip">Bedtime</span></div></div>
+        <div class="status"><b>Analyzing your photo</b><div class="bar"><i></i></div><span>Reading the names and strengths</span></div></div>
+    </div>
+    <div class="notes"><div><b>Feels like:</b> a serious AI product with a soft heart. Closest to what YC judges see from strong technical teams.</div><div><b>Edge:</b> the contrast. A cream cat in an app-icon tile against near-black, with acid lime doing all the pointing.</div><div><b>Trade-off:</b> the family and Mom-facing pages go dark too. Less cozy for an 80-year-old at first glance.</div></div>
+  </section>
+
+  <!-- B -->
+  <section class="dir">
+    <header><b>B · Daylight</b><span>Bright, editorial, one hot color. Big thin serif, hard edges.</span><div class="sw"><i style="background:#fffdf8"></i><i style="background:#ff4a1c"></i><i style="background:#141414"></i></div></header>
+    <div class="mock b">
+      <div class="stage"><div class="mark">Kinly</div>
+        <div class="scene"><div class="bubble">Hello, I'm Kinly. <em>Who needs a cat?</em></div><img src="../pet/sticker_hello.webp" alt=""></div>
+        <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="panel"><h2>Bring Kinly <em>home</em></h2><p class="lede">A small cat who keeps you company, checks in on the day, and remembers what you'd rather not have to.</p>
+        <div class="choices"><div class="choice on"><b>Someone I love</b><small>I'll set Kinly up for them</small></div><div class="choice"><b>Me</b><small>I'm setting Kinly up for myself</small></div></div>
+        <div class="btn">Meet Kinly</div></div>
+      <div class="parts"><div class="med"><b>NORVASC 5 MG TABLET</b><div class="chips"><span class="chip on">Morning</span><span class="chip">Noon</span><span class="chip">Evening</span><span class="chip">Bedtime</span></div></div>
+        <div class="status"><b>Analyzing your photo</b><div class="bar"><i></i></div><span>Reading the names and strengths</span></div></div>
+    </div>
+    <div class="notes"><div><b>Feels like:</b> a modern magazine, or a design-led startup. Confident and warm at once.</div><div><b>Edge:</b> scale and one loud color. A huge thin serif headline, a full vermilion wall behind Kinly, square corners everywhere else.</div><div><b>Trade-off:</b> vermilion can read as "alert" in a health product, so warnings need their own clear treatment.</div></div>
+  </section>
+</div>
+</body>
+</html>

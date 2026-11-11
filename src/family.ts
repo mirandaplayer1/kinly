@@ -5,24 +5,28 @@ export const FAMILY_PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kinly · Her day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#faf7f2; --card:#fff; --ink:#1f2421; --muted:#6b736e; --line:#e7e1d6;
+  :root { --bg:#fbf3e4; --card:#fffaf0; --ink:#3b2f2a; --muted:#6a574c; --line:#dfcfb1;
           --green:#2f7d5b; --yellow:#b7791f; --red:#c0392b; --accent:#e0a526; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font: 17px/1.45 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); font: 17px/1.45 "Geist", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent); }
   main { max-width: 620px; margin: 0 auto; padding: 24px 16px 60px; }
   header { display:flex; align-items:center; gap:14px; margin-bottom: 14px; }
   header img { width:64px; height:64px; border-radius:18px; border:1px solid var(--line); }
-  h1 { font-size: 28px; margin:0; letter-spacing:-0.02em; }
+  h1 { font: 700 38px/1 "Bricolage Grotesque", sans-serif; margin:0; letter-spacing:-0.04em; }
   header a { margin-left:auto; color:var(--muted); font-size:14px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 22px 0 10px; }
-  #status { font-size: 20px; font-weight:600; padding: 16px 18px; border-radius: 14px; background: var(--card); border:1px solid var(--line); }
+  h2 { font: 700 22px/1.1 "Bricolage Grotesque", sans-serif; letter-spacing:-0.03em; margin: 30px 0 12px; }
+  #status { font: 600 22px/1.2 "Bricolage Grotesque", sans-serif; letter-spacing:-0.02em; padding: 18px 20px; border-radius: 14px; background: var(--card); border:1.5px solid var(--ink); }
   #status.green { color: var(--green); } #status.yellow { color: var(--yellow); } #status.red { color: var(--red); }
   .missions { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; }
   .mission { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
   .mission.done { border-color: var(--green); }
   .mission .t { font-size:13px; color:var(--muted); font-variant-numeric: tabular-nums; }
-  .mission .n { font-weight:700; }
+  .mission .n { font-weight:600; }
   .mission .s { font-size:13px; color:var(--muted); }
   .mission.done .s { color: var(--green); font-weight:600; }
   .card { background:var(--card); border:1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
