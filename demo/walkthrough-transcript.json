@@ -1,214 +1,208 @@
 {
-  "recorded": "2026-11-11T14:14:56.421Z",
+  "recorded": "2026-11-11T14:19:23.565Z",
   "dryRun": false,
   "notes": [],
   "messages": [
     {
-      "time": "2026-11-11T14:11:31.619Z",
+      "time": "2026-11-11T14:17:11.452Z",
       "chat": "family",
       "from": "kinly",
       "text": "Hi! I'm Kinly, Margaret's companion. You're in her circle now. Ask me how she's doing any time, or tell me something to pass on to her."
     },
     {
-      "time": "2026-11-11T14:11:37.150Z",
+      "time": "2026-11-11T14:17:12.492Z",
       "chat": "care",
       "from": "kinly",
       "text": "Hello, I'm Kinly, Margaret's companion. I'll message you only when something needs a professional, and you can send me changes to pass on to her."
     },
     {
-      "time": "2026-11-11T14:11:55.382Z",
+      "time": "2026-11-11T14:17:21.601Z",
       "chat": "elder",
       "from": "kinly",
       "sticker": "hello"
     },
     {
-      "time": "2026-11-11T14:11:55.382Z",
+      "time": "2026-11-11T14:17:21.601Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "Good morning, Margaret, it is so good to see you up. Today we have your morning pills and sugar check, our meals, and a walk outside whenever you feel ready. Take your time easing into the day, and let me know when you would like to start."
+      "text": "Good morning, Margaret—it makes my morning just seeing you up! Today we have your morning pills and blood sugar check to get through, plus a stroll later on. Take your time waking up, and I'm right here whenever you're ready."
     },
     {
-      "time": "2026-11-11T14:12:14.217Z",
+      "time": "2026-11-11T14:17:32.153Z",
       "chat": "elder",
       "from": "kinly",
       "sticker": "cozy"
     },
     {
-      "time": "2026-11-11T14:12:14.217Z",
+      "time": "2026-11-11T14:17:32.153Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "Margaret, when you're ready for your morning pills, would you show them to me in your hand or the bottles with a quick photo or video? I always feel much better knowing you're taking good care of yourself."
+      "text": "Good morning, Margaret, I'm just soaking up a patch of morning sun and wondering if you're taking your Norvasc and Glucophage yet. Whenever you're ready, could you snap a quick photo or short video of the pills in your hand or the bottles for me?"
     },
     {
-      "time": "2026-11-11T14:12:24.317Z",
+      "time": "2026-11-11T14:17:38.068Z",
+      "chat": "elder",
+      "from": "kinly",
+      "sticker": "cozy"
+    },
+    {
+      "time": "2026-11-11T14:17:38.068Z",
+      "chat": "elder",
+      "from": "kinly",
+      "text": "Good morning, Margaret, I am curled up by the window watching the garden wake up. When you take your morning blood sugar, send me a photo of your meter and I will read the number for you. It always puts my mind at ease knowing how your day is starting off."
+    },
+    {
+      "time": "2026-11-11T14:17:41.535Z",
       "chat": "elder",
       "from": "elder",
       "text": "Here are my morning pills",
-      "image": "(photo, 49 KB)"
+      "image": "(photo, 192 KB)"
     },
     {
-      "time": "2026-11-11T14:12:48.672Z",
+      "time": "2026-11-11T14:18:09.160Z",
       "chat": "family",
       "from": "kinly",
-      "text": "🟡 Kinly → family\nHi Anna, Mom just showed me her morning Norvasc at 10:12 PM, and her Glucophage wasn't with it. I've reached out to her care team to check what she should do about the late dose."
+      "text": "🟡 Kinly → family\nHi Anna! Mom had her morning Norvasc ready, and I just reminded her to grab her Glucophage as well."
     },
     {
-      "time": "2026-11-11T14:12:48.672Z",
-      "chat": "care",
-      "from": "kinly",
-      "text": "Kinly → care team\nMargaret presented morning Norvasc 5mg at 22:12; Glucophage was missing from the dose. Kinly asked her to wait and is checking for clinical advice regarding the delayed morning dose."
-    },
-    {
-      "time": "2026-11-11T14:12:48.672Z",
+      "time": "2026-11-11T14:18:09.160Z",
       "chat": "elder",
       "from": "kinly",
       "sticker": "worried"
     },
     {
-      "time": "2026-11-11T14:12:48.672Z",
+      "time": "2026-11-11T14:18:09.160Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "That looks like your Norvasc, Margaret, but your round Glucophage isn't there. Since it's late in the evening for morning medicine, I'm asking your care team what you should do. I'll let Anna know as well so she's in the loop."
+      "text": "That octagonal one is your Norvasc, Margaret. Don't forget your round Glucophage tablet for this morning too! I'll let Anna know I gave you a little nudge."
     },
     {
-      "time": "2026-11-11T14:12:59.465Z",
+      "time": "2026-11-11T14:18:12.483Z",
       "chat": "elder",
       "from": "elder",
       "text": "Found the other one",
-      "image": "(photo, 38 KB)"
+      "image": "(photo, 157 KB)"
     },
     {
-      "time": "2026-11-11T14:13:20.623Z",
-      "chat": "family",
-      "from": "kinly",
-      "text": "🟡 Kinly → family\nMom found her Glucophage, but since it's after 10 PM and these are her morning pills, I suggested she hold off while we check with her care team."
-    },
-    {
-      "time": "2026-11-11T14:13:20.623Z",
-      "chat": "care",
-      "from": "kinly",
-      "text": "Kinly → care team\nPatient Margaret is attempting to take morning medications (Norvasc 5mg, Glucophage 500mg) at 22:12. Advised to hold for guidance on whether to skip or adjust dose."
-    },
-    {
-      "time": "2026-11-11T14:13:20.623Z",
+      "time": "2026-11-11T14:18:24.652Z",
       "chat": "elder",
       "from": "kinly",
-      "sticker": "worried"
+      "sticker": "yay"
     },
     {
-      "time": "2026-11-11T14:13:20.623Z",
+      "time": "2026-11-11T14:18:24.652Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "That round white tablet is your Glucophage. Since it is already past 10 PM, let's hold off on taking morning pills until we check with your care team. I am reaching out to them and letting Anna know too."
+      "text": "Those are the two, Margaret—your Norvasc and Glucophage are all set for this morning! Glad you found it. 😊"
     },
     {
-      "time": "2026-11-11T14:13:31.564Z",
+      "time": "2026-11-11T14:18:28.299Z",
       "chat": "family",
       "from": "family",
       "text": "How's Mom doing today? Tell her I'll visit on Saturday."
     },
     {
-      "time": "2026-11-11T14:13:40.493Z",
+      "time": "2026-11-11T14:18:35.165Z",
       "chat": "family",
       "from": "kinly",
-      "text": "Kinly → family\nMom had a quiet day, but she just took her morning pills late tonight around 10:12 PM—both her Norvasc and Glucophage. I flagged that late timing for her care team so they are aware. I will tell her right away that you are visiting on Saturday!"
+      "text": "Kinly → family\nMom is off to a good start this morning—she took both of her morning pills right on time at 8:00, though she hasn't checked her blood sugar yet. I'll let her know right away that you'll be visiting on Saturday!"
     },
     {
-      "time": "2026-11-11T14:13:40.494Z",
+      "time": "2026-11-11T14:18:35.165Z",
       "chat": "elder",
       "from": "kinly",
       "sticker": "love"
     },
     {
-      "time": "2026-11-11T14:13:40.494Z",
+      "time": "2026-11-11T14:18:35.165Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "Anna asked me to let you know she will visit you this Saturday! I also updated her on how your day went."
+      "text": "Anna just sent a note saying she will visit you this Saturday! I let her know you've already taken your morning pills."
     },
     {
-      "time": "2026-11-11T14:13:51.281Z",
+      "time": "2026-11-11T14:18:38.549Z",
       "chat": "elder",
       "from": "elder",
       "text": "Tell Anna I can't wait, I'll make dumplings."
     },
     {
-      "time": "2026-11-11T14:13:57.757Z",
+      "time": "2026-11-11T14:18:46.372Z",
       "chat": "family",
       "from": "kinly",
       "text": "Kinly → family\nMom says she can't wait to see you on Saturday, and she's going to make dumplings!"
     },
     {
-      "time": "2026-11-11T14:13:57.757Z",
+      "time": "2026-11-11T14:18:46.372Z",
       "chat": "elder",
       "from": "kinly",
-      "sticker": "love"
+      "sticker": "happy"
     },
     {
-      "time": "2026-11-11T14:13:57.757Z",
+      "time": "2026-11-11T14:18:46.372Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "I'll let Anna know right away—she is going to love that! Homemade dumplings sound wonderful. 🥟"
+      "text": "I'll pass that along to Anna right away, Margaret! Homemade dumplings sound like such a treat. 🥟"
     },
     {
-      "time": "2026-11-11T14:14:07.530Z",
+      "time": "2026-11-11T14:18:49.681Z",
       "chat": "elder",
       "from": "elder",
       "text": "I feel dizzy and shaky. My blood sugar says 58."
     },
     {
-      "time": "2026-11-11T14:14:18.031Z",
+      "time": "2026-11-11T14:19:01.157Z",
       "chat": "care",
       "from": "kinly",
-      "text": "🔴 Kinly → care team\nPatient Margaret reports blood sugar reading of 58 mg/dL at 22:14 accompanied by dizziness and tremors. Alerted daughter Anna and advised patient to sit down safely."
+      "text": "🔴 Kinly → care team\nMargaret reported a blood sugar reading of 58 mg/dL with symptoms of dizziness and shaking at 08:05. Alerted family and advised her to sit down and take fast-acting sugar."
     },
     {
-      "time": "2026-11-11T14:14:18.031Z",
+      "time": "2026-11-11T14:19:01.157Z",
       "chat": "family",
       "from": "kinly",
-      "text": "🔴 Kinly → family\nAnna, Mom's blood sugar dropped to 58 and she says she is feeling dizzy and shaky. Please call or check on her right away—I am notifying her care team as well."
+      "text": "🔴 Kinly → family\nAnna, Mom's blood sugar is 58 mg/dL and she is feeling dizzy and shaky. Please check on her immediately."
     },
     {
-      "time": "2026-11-11T14:14:18.031Z",
+      "time": "2026-11-11T14:19:01.157Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "Please sit down somewhere comfortable right now, Margaret, and take some fruit juice or a spoonful of honey if it is within reach. 58 is very low and explaining why you feel shaky. I am reaching out to Anna and your care team right now."
+      "text": "Margaret, please sit down safely right now. 58 is very low, so please take some juice or candy if you have it nearby. I am letting Anna and your care team know right away."
     },
     {
-      "time": "2026-11-11T14:14:30.729Z",
+      "time": "2026-11-11T14:19:06.214Z",
       "chat": "care",
       "from": "care",
       "text": "Thanks Kinly. Please ask her to drink half a glass of juice and recheck in 15 minutes. I'm calling her now."
     },
     {
-      "time": "2026-11-11T14:14:38.050Z",
+      "time": "2026-11-11T14:19:12.705Z",
       "chat": "care",
       "from": "kinly",
-      "text": "Kinly → care team\nI am telling Margaret right now to have half a glass of juice and test again in 15 minutes. I will also make sure she knows you are calling her right now. Thank you!"
+      "text": "Kinly → care team\nThank you, I am letting Margaret know right away. I'm telling her to drink half a glass of juice, recheck her blood sugar in 15 minutes, and expect your call."
     },
     {
-      "time": "2026-11-11T14:14:38.050Z",
+      "time": "2026-11-11T14:19:12.705Z",
       "chat": "elder",
       "from": "kinly",
       "sticker": "cozy"
     },
     {
-      "time": "2026-11-11T14:14:38.050Z",
+      "time": "2026-11-11T14:19:12.705Z",
       "chat": "elder",
       "from": "kinly",
-      "text": "Your nurse just messaged, Margaret. She wants you to drink half a glass of juice right now and recheck your sugar in 15 minutes, and she is calling your phone this very minute."
+      "text": "Margaret, the nurse from your care team says to drink half a glass of juice right away and recheck your sugar in 15 minutes. She is also calling your phone right now."
     }
   ],
   "beats": [
     {
       "beat": "1",
       "step": "Kinly reads the label",
-      "seconds": 6.8,
+      "seconds": 5.3,
       "title": "Kinly read 2 medicines from this photo",
       "medicines": [
         "NORVASC 5 MG TABLET Morning Added",
         "GLUCOPHAGE 500 MG TABLET Morning, Evening Added"
       ],
-      "note": "I've noted down Mom's Norvasc for the morning and Glucophage for morning and evening from both clear labels."
+      "note": "I've got Mom's Norvasc for the morning and Glucophage for morning and evening all clearly written down."
     },
     {
       "beat": "2",
@@ -241,7 +235,7 @@
     {
       "beat": "2",
       "step": "elder opens the link",
-      "seconds": 12.5,
+      "seconds": 8.4,
       "added": [
         {
           "who": "elder",
@@ -251,7 +245,7 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "Good morning, Margaret, it is so good to see you up. Today we have your morning pills and sugar check, our meals, and a walk outside whenever you feel ready. Take your time easing into the day, and let me know when you would like to start."
+          "text": "Good morning, Margaret—it makes my morning just seeing you up! Today we have your morning pills and blood sugar check to get through, plus a stroll later on. Take your time waking up, and I'm right here whenever you're ready."
         }
       ],
       "missionsDone": [],
@@ -260,7 +254,7 @@
     {
       "beat": "3",
       "step": "Kinly nudges about the morning pills",
-      "seconds": 0,
+      "seconds": 6,
       "added": [
         {
           "who": "elder",
@@ -270,7 +264,17 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "Margaret, when you're ready for your morning pills, would you show them to me in your hand or the bottles with a quick photo or video? I always feel much better knowing you're taking good care of yourself."
+          "text": "Good morning, Margaret, I'm just soaking up a patch of morning sun and wondering if you're taking your Norvasc and Glucophage yet. Whenever you're ready, could you snap a quick photo or short video of the pills in your hand or the bottles for me?"
+        },
+        {
+          "who": "elder",
+          "from": "kinly",
+          "sticker": "cozy"
+        },
+        {
+          "who": "elder",
+          "from": "kinly",
+          "text": "Good morning, Margaret, I am curled up by the window watching the garden wake up. When you take your morning blood sugar, send me a photo of your meter and I will read the number for you. It always puts my mind at ease knowing how your day is starting off."
         }
       ],
       "missionsDone": [],
@@ -279,7 +283,7 @@
     {
       "beat": "3",
       "step": "elder says \"Here are my morning pills\"",
-      "seconds": 24.5,
+      "seconds": 27.8,
       "added": [
         {
           "who": "elder",
@@ -295,17 +299,12 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "That looks like your Norvasc, Margaret, but your round Glucophage isn't there. Since it's late in the evening for morning medicine, I'm asking your care team what you should do. I'll let Anna know as well so she's in the loop."
+          "text": "That octagonal one is your Norvasc, Margaret. Don't forget your round Glucophage tablet for this morning too! I'll let Anna know I gave you a little nudge."
         },
         {
           "who": "family",
           "from": "kinly",
-          "text": "🟡 Kinly → family\nHi Anna, Mom just showed me her morning Norvasc at 10:12 PM, and her Glucophage wasn't with it. I've reached out to her care team to check what she should do about the late dose."
-        },
-        {
-          "who": "care",
-          "from": "kinly",
-          "text": "Kinly → care team\nMargaret presented morning Norvasc 5mg at 22:12; Glucophage was missing from the dose. Kinly asked her to wait and is checking for clinical advice regarding the delayed morning dose."
+          "text": "🟡 Kinly → family\nHi Anna! Mom had her morning Norvasc ready, and I just reminded her to grab her Glucophage as well."
         }
       ],
       "missionsDone": [],
@@ -316,7 +315,7 @@
     {
       "beat": "4",
       "step": "elder says \"Found the other one\"",
-      "seconds": 21.3,
+      "seconds": 12.5,
       "added": [
         {
           "who": "elder",
@@ -327,34 +326,26 @@
         {
           "who": "elder",
           "from": "kinly",
-          "sticker": "worried"
+          "sticker": "yay"
         },
         {
           "who": "elder",
           "from": "kinly",
-          "text": "That round white tablet is your Glucophage. Since it is already past 10 PM, let's hold off on taking morning pills until we check with your care team. I am reaching out to them and letting Anna know too."
-        },
-        {
-          "who": "family",
-          "from": "kinly",
-          "text": "🟡 Kinly → family\nMom found her Glucophage, but since it's after 10 PM and these are her morning pills, I suggested she hold off while we check with her care team."
-        },
-        {
-          "who": "care",
-          "from": "kinly",
-          "text": "Kinly → care team\nPatient Margaret is attempting to take morning medications (Norvasc 5mg, Glucophage 500mg) at 22:12. Advised to hold for guidance on whether to skip or adjust dose."
+          "text": "Those are the two, Margaret—your Norvasc and Glucophage are all set for this morning! Glad you found it. 😊"
         }
       ],
-      "missionsDone": [],
+      "missionsDone": [
+        "meds_morning"
+      ],
       "levels": [
         "yellow",
-        "yellow"
+        "green"
       ]
     },
     {
       "beat": "5",
       "step": "family says \"How's Mom doing today? Tell her I'll visit on Saturday.\"",
-      "seconds": 9.3,
+      "seconds": 7.3,
       "added": [
         {
           "who": "elder",
@@ -364,7 +355,7 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "Anna asked me to let you know she will visit you this Saturday! I also updated her on how your day went."
+          "text": "Anna just sent a note saying she will visit you this Saturday! I let her know you've already taken your morning pills."
         },
         {
           "who": "family",
@@ -374,20 +365,22 @@
         {
           "who": "family",
           "from": "kinly",
-          "text": "Kinly → family\nMom had a quiet day, but she just took her morning pills late tonight around 10:12 PM—both her Norvasc and Glucophage. I flagged that late timing for her care team so they are aware. I will tell her right away that you are visiting on Saturday!"
+          "text": "Kinly → family\nMom is off to a good start this morning—she took both of her morning pills right on time at 8:00, though she hasn't checked her blood sugar yet. I'll let her know right away that you'll be visiting on Saturday!"
         }
       ],
-      "missionsDone": [],
+      "missionsDone": [
+        "meds_morning"
+      ],
       "levels": [
         "yellow",
-        "yellow",
+        "green",
         "green"
       ]
     },
     {
       "beat": "5",
       "step": "elder says \"Tell Anna I can't wait, I'll make dumplings.\"",
-      "seconds": 6.9,
+      "seconds": 8.1,
       "added": [
         {
           "who": "elder",
@@ -397,12 +390,12 @@
         {
           "who": "elder",
           "from": "kinly",
-          "sticker": "love"
+          "sticker": "happy"
         },
         {
           "who": "elder",
           "from": "kinly",
-          "text": "I'll let Anna know right away—she is going to love that! Homemade dumplings sound wonderful. 🥟"
+          "text": "I'll pass that along to Anna right away, Margaret! Homemade dumplings sound like such a treat. 🥟"
         },
         {
           "who": "family",
@@ -410,10 +403,12 @@
           "text": "Kinly → family\nMom says she can't wait to see you on Saturday, and she's going to make dumplings!"
         }
       ],
-      "missionsDone": [],
+      "missionsDone": [
+        "meds_morning"
+      ],
       "levels": [
         "yellow",
-        "yellow",
+        "green",
         "green",
         "green"
       ]
@@ -421,7 +416,7 @@
     {
       "beat": "6",
       "step": "elder says \"I feel dizzy and shaky. My blood sugar says 58.\"",
-      "seconds": 10.9,
+      "seconds": 11.7,
       "added": [
         {
           "who": "elder",
@@ -431,23 +426,26 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "Please sit down somewhere comfortable right now, Margaret, and take some fruit juice or a spoonful of honey if it is within reach. 58 is very low and explaining why you feel shaky. I am reaching out to Anna and your care team right now."
+          "text": "Margaret, please sit down safely right now. 58 is very low, so please take some juice or candy if you have it nearby. I am letting Anna and your care team know right away."
         },
         {
           "who": "family",
           "from": "kinly",
-          "text": "🔴 Kinly → family\nAnna, Mom's blood sugar dropped to 58 and she says she is feeling dizzy and shaky. Please call or check on her right away—I am notifying her care team as well."
+          "text": "🔴 Kinly → family\nAnna, Mom's blood sugar is 58 mg/dL and she is feeling dizzy and shaky. Please check on her immediately."
         },
         {
           "who": "care",
           "from": "kinly",
-          "text": "🔴 Kinly → care team\nPatient Margaret reports blood sugar reading of 58 mg/dL at 22:14 accompanied by dizziness and tremors. Alerted daughter Anna and advised patient to sit down safely."
+          "text": "🔴 Kinly → care team\nMargaret reported a blood sugar reading of 58 mg/dL with symptoms of dizziness and shaking at 08:05. Alerted family and advised her to sit down and take fast-acting sugar."
         }
       ],
-      "missionsDone": [],
+      "missionsDone": [
+        "meds_morning",
+        "glucose_morning"
+      ],
       "levels": [
         "yellow",
-        "yellow",
+        "green",
         "green",
         "green",
         "red"
@@ -456,7 +454,7 @@
     {
       "beat": "7",
       "step": "care says \"Thanks Kinly. Please ask her to drink half a glass of juice and recheck in 15 minutes. I'm calling her now.\"",
-      "seconds": 7.7,
+      "seconds": 6.9,
       "added": [
         {
           "who": "elder",
@@ -466,7 +464,7 @@
         {
           "who": "elder",
           "from": "kinly",
-          "text": "Your nurse just messaged, Margaret. She wants you to drink half a glass of juice right now and recheck your sugar in 15 minutes, and she is calling your phone this very minute."
+          "text": "Margaret, the nurse from your care team says to drink half a glass of juice right away and recheck your sugar in 15 minutes. She is also calling your phone right now."
         },
         {
           "who": "care",
@@ -476,13 +474,16 @@
         {
           "who": "care",
           "from": "kinly",
-          "text": "Kinly → care team\nI am telling Margaret right now to have half a glass of juice and test again in 15 minutes. I will also make sure she knows you are calling her right now. Thank you!"
+          "text": "Kinly → care team\nThank you, I am letting Margaret know right away. I'm telling her to drink half a glass of juice, recheck her blood sugar in 15 minutes, and expect your call."
         }
       ],
-      "missionsDone": [],
+      "missionsDone": [
+        "meds_morning",
+        "glucose_morning"
+      ],
       "levels": [
         "yellow",
-        "yellow",
+        "green",
         "green",
         "green",
         "red",
@@ -496,15 +497,15 @@
         "id": "meds_morning",
         "time": "08:00",
         "title": "Morning pills",
-        "done": false,
+        "done": true,
         "asked": true
       },
       {
         "id": "glucose_morning",
         "time": "08:00",
         "title": "Blood sugar, morning",
-        "done": false,
-        "asked": false
+        "done": true,
+        "asked": true
       },
       {
         "id": "meal_breakfast",
@@ -549,48 +550,43 @@
         "asked": false
       }
     ],
-    "changes": [
-      {
-        "time": "2026-11-11T14:14:18.031Z",
-        "text": "Acute hypoglycemia (58 mg/dL) with dizziness and shakiness."
-      }
-    ],
+    "changes": [],
     "timeline": [
       {
         "kind": "pills",
         "level": "yellow",
-        "summary": "Margaret showed Norvasc 5 mg at 22:12 as morning pills; Glucophage was missing.",
-        "time": "2026-11-11T14:12:48.672Z"
+        "summary": "Margaret showed her morning Norvasc; reminded her to also take Glucophage.",
+        "time": "2026-11-11T14:18:09.160Z"
       },
       {
         "kind": "pills",
-        "level": "yellow",
-        "summary": "Margaret found Glucophage 500 mg at 22:12; flagged late morning dose timing for care team.",
-        "time": "2026-11-11T14:13:20.623Z"
+        "level": "green",
+        "summary": "Margaret showed both morning pills (Norvasc 5mg and Glucophage 500mg).",
+        "time": "2026-11-11T14:18:24.652Z"
       },
       {
         "kind": "family",
         "level": "green",
         "summary": "Anna asked how Mom is doing and sent a message that she will visit on Saturday.",
-        "time": "2026-11-11T14:13:40.493Z"
+        "time": "2026-11-11T14:18:35.165Z"
       },
       {
         "kind": "chat",
         "level": "green",
-        "summary": "Margaret sent a message for Anna that she cannot wait for Saturday and will make dumplings.",
-        "time": "2026-11-11T14:13:57.757Z"
+        "summary": "Margaret sent a message to Anna that she cannot wait for Saturday's visit and will make dumplings.",
+        "time": "2026-11-11T14:18:46.372Z"
       },
       {
         "kind": "glucose",
         "level": "red",
-        "summary": "Margaret reported blood sugar at 58 mg/dL at 22:14 with dizziness and shakiness; alerted family and care team.",
-        "time": "2026-11-11T14:14:18.031Z"
+        "summary": "Margaret reported feeling dizzy and shaky with morning blood sugar at 58 mg/dL; alerted Anna and care team.",
+        "time": "2026-11-11T14:19:01.157Z"
       },
       {
         "kind": "care",
         "level": "green",
-        "summary": "Care team instructed Margaret to drink half a glass of juice, recheck in 15 minutes, and called her phone.",
-        "time": "2026-11-11T14:14:38.050Z"
+        "summary": "Care team nurse instructed Margaret to drink half a glass of juice, retest in 15 minutes, and called her.",
+        "time": "2026-11-11T14:19:12.705Z"
       }
     ]
   }

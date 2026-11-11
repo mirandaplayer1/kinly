@@ -14,12 +14,12 @@ norm() { # in out [speed]
 }
 : > $T/list.txt
 add() { [ -f "$1" ] && norm "$1" "$T/$2.mp4" "${3:-1}" && echo "file '$2.mp4'" >> $T/list.txt && echo "added $1"; }
-add video/final/c1.mp4 01
-add video/final/c2.mp4 02
-add video/final/c3.mp4 03
+add video/final/c1.mp4 01 1.2
+add video/final/c2.mp4 02 1.25
+add video/final/c3.mp4 03 1.25
 add demo/walkthrough.mp4 04 $SPEED
-add video/final/c4.mp4 05
-add demo/glasses-concept.mp4 06
-add video/final/c5.mp4 07
+add video/final/c4.mp4 05 1.4
+add demo/glasses-concept.mp4 06 1.12
+add video/final/c5.mp4 07 1.2
 ffmpeg -loglevel error -y -f concat -safe 0 -i $T/list.txt -c copy -movflags +faststart demo/kinly-demo.mp4
 ffprobe -v error -show_entries format=duration,size -of default=nw=1 demo/kinly-demo.mp4
