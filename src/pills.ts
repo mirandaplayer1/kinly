@@ -1,5 +1,5 @@
 // Pill appearance lookup from the Taiwan FDA open dataset (med/42_5.json).
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 type PillRow = {
   許可證字號: string;
@@ -25,6 +25,36 @@ export type Pill = {
   imprint: string;
   imageUrl: string | null;
 };
+
+// Reference photos are downloaded once and kept in med/ref, then sent to the model as image data.
+const refCache = new Map<string, { data: string; mediaType: "image/png" | "image/jpeg" } | null>();
+
+export async function referencePhoto(pill: Pill): Promise<{ data: string; mediaType: "image/png" | "image/jpeg" } | null> {
+  if (!pill.imageUrl) return null;
+  const hit = refCache.get(pill.imageUrl);
+  if (hit !== undefined) return hit;
+  const file = `med/ref/${pill.name.replace(/[^A-Za-z0-9]+/g, "_")}`;
+  try {
+    let buf: Buffer;
+    if (existsSync(file)) {
+      buf = readFileSync(file);
+    } else {
+      const res = await fetch(pill.imageUrl);
+      if (!res.ok) throw new Error(`${res.status}`);
+      buf = Buffer.from(await res.arrayBuffer());
+      mkdirSync("med/ref", { recursive: true });
+      writeFileSync(file, buf);
+    }
+    const mediaType = buf[0] === 0xff ? "image/jpeg" : "image/png";
+    const out = { data: buf.toString("base64"), mediaType } as const;
+    refCache.set(pill.imageUrl, out);
+    return out;
+  } catch (err) {
+    console.error(`Reference photo for ${pill.name} unavailable:`, err);
+    refCache.set(pill.imageUrl, null);
+    return null;
+  }
+}
 
 /** Find a pill by its exact English product name, e.g. "NORVASC TABLETS 5MG". */
 export function findPill(englishName: string): Pill {

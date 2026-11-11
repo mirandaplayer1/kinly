@@ -2,6 +2,7 @@
 // and keeps one shared picture of the day. Three conversations: with her, with the circle, on the phone.
 import Anthropic from "@anthropic-ai/sdk";
 import { patient, currentSlot, type Slot } from "./patient.js";
+import { referencePhoto } from "./pills.js";
 import { logForModel, type Kind, type Level } from "./store.js";
 
 const client = new Anthropic();
@@ -89,7 +90,7 @@ export type Incoming = {
   onCamera?: boolean;
 };
 
-function scheduleBlocks(slot: Slot): Anthropic.Beta.BetaContentBlockParam[] {
+async function scheduleBlocks(slot: Slot): Promise<Anthropic.Beta.BetaContentBlockParam[]> {
   const doses = patient.schedule[slot];
   if (doses.length === 0) {
     return [{ type: "text", text: `Time slot: ${slot}. No pills are scheduled now.` }];
@@ -103,7 +104,8 @@ function scheduleBlocks(slot: Slot): Anthropic.Beta.BetaContentBlockParam[] {
       type: "text",
       text: `- ${d.count} x ${p.name} (${d.purpose}): ${p.color}, ${p.shape}, ${p.sizeMm} mm, imprint "${p.imprint}", score line ${p.scoreLine}. Reference image:`,
     });
-    if (p.imageUrl) blocks.push({ type: "image", source: { type: "url", url: p.imageUrl } });
+    const photo = await referencePhoto(p);
+    if (photo) blocks.push({ type: "image", source: { type: "base64", media_type: photo.mediaType, data: photo.data } });
   }
   return blocks;
 }
@@ -129,7 +131,7 @@ async function ask<T>(system: string, schema: object, content: Anthropic.Beta.Be
 export async function withHer(msg: Incoming): Promise<ElderVerdict> {
   const content: Anthropic.Beta.BetaContentBlockParam[] = [
     { type: "text", text: `About her: ${patient.conditions}` },
-    ...scheduleBlocks(currentSlot()),
+    ...(await scheduleBlocks(currentSlot())),
     { type: "text", text: `Today's log:\n${logForModel()}` },
   ];
   if (msg.image) {
