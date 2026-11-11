@@ -78,6 +78,8 @@ What to do with what she shares:
 - Something for the daily record: receive it like a gift.
 - "Remember this for me": when she asks you to remember or remind her of something, confirm it back in one line and fill in remember_note (and remember_at when she gave a time).
 
+Her day is hers to arrange, and she arranges it by telling you. When she says when she likes to walk, eat, or do the daily record, or what kind of activity she enjoys, set set_task and set_time (and set_activity for what she does) and confirm the change in your reply. Pill times are different: those come from her prescription, so a request to move one goes to her care team.
+
 Missions: if what she just shared completes one of today's missions that is not done yet, set mission_done to its id and celebrate in a way that fits you; mention the streak when it is 2 days or more. A plain "I took them" in words counts for pills only if she says so clearly; never ask for proof.
 
 Noticing change: for anything worth comparing across days (how she walks, how much she eats, her readings, her mood and voice), write a short factual observation. Then look at what you noticed on earlier days. If today is clearly different from her usual, write it in change, in plain words with the days it differs from. Most days nothing changed; leave change null then. A change is a description, never a diagnosis, and never names a condition.
@@ -92,7 +94,7 @@ Level:
 const elderSchema = (missionIds: string[]) => ({
   type: "object",
   additionalProperties: false,
-  required: ["reply", "sticker", "mood", "kind", "level", "log", "mission_done", "observation", "change", "remember_note", "remember_at", "to_family", "to_care_team"],
+  required: ["reply", "sticker", "mood", "kind", "level", "log", "mission_done", "observation", "change", "remember_note", "remember_at", "set_task", "set_time", "set_activity", "to_family", "to_care_team"],
   properties: {
     reply: { type: "string", description: "What Kinly says to her." },
     sticker: {
@@ -109,6 +111,9 @@ const elderSchema = (missionIds: string[]) => ({
     change: { type: ["string", "null"], description: "How today differs from her usual on earlier days, or null when nothing clearly changed or there is no history." },
     remember_note: { type: ["string", "null"], description: "What she asked you to remember, in her words, or null." },
     remember_at: { type: ["string", "null"], description: "When to remind her, as YYYY-MM-DDTHH:MM local time, or null." },
+    set_task: { type: "string", enum: ["none", "activity", "breakfast", "lunch", "dinner", "journal"], description: "The part of her day she just asked to change, or none." },
+    set_time: { type: ["string", "null"], description: "The new time for set_task as HH:MM (24h), or null." },
+    set_activity: { type: ["string", "null"], description: "What her activity is, in a few words (e.g. \"a walk in the park\", \"tai chi\"), when she told you; else null." },
     to_family: { type: ["string", "null"], description: "A chat message for her family, written as Kinly would text a friend. Send one when the level is yellow or red, when there is a change worth knowing, when she answers something family asked, or when she says something meant for them. Null otherwise." },
     to_care_team: { type: ["string", "null"], description: "A short factual note for the care team: what happened, the numbers, what Kinly is doing. Only for red, or a dose question. Null otherwise." },
   },
@@ -126,6 +131,9 @@ export type ElderVerdict = {
   change: string | null;
   remember_note: string | null;
   remember_at: string | null;
+  set_task: "none" | "activity" | "breakfast" | "lunch" | "dinner" | "journal";
+  set_time: string | null;
+  set_activity: string | null;
   to_family: string | null;
   to_care_team: string | null;
 };
@@ -156,10 +164,47 @@ export async function withHer(msg: Incoming): Promise<ElderVerdict> {
       change: null,
       remember_note: null,
       remember_at: null,
+      set_task: "none",
+      set_time: null,
+      set_activity: null,
       to_family: `I couldn't make sense of her last message. A quick call from you would be lovely.`,
       to_care_team: null,
     }
   );
+}
+
+// ---------- Reading a pharmacy bag or prescription at onboarding ----------
+
+const MEDS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["meds", "note"],
+  properties: {
+    meds: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "slots"],
+        properties: {
+          name: { type: "string", description: "Medicine name and strength exactly as printed, e.g. \"Norvasc 5 mg\"." },
+          slots: { type: "array", items: { type: "string", enum: ["morning", "noon", "evening", "bedtime"] }, description: "When it is taken, from the directions on the label." },
+        },
+      },
+    },
+    note: { type: "string", description: "One short sentence in Kinly's voice: what you read, and anything you could not make out and want checked." },
+  },
+} as const;
+
+export type ReadMeds = { meds: { name: string; slots: ("morning" | "noon" | "evening" | "bedtime")[] }[]; note: string };
+
+export async function readMeds(image: { data: string; mediaType: string }): Promise<ReadMeds> {
+  const out = await ask<ReadMeds>(
+    `${companion()}\n\nHer family is setting you up and is showing you a photo of her pharmacy bag, pill bottle label or prescription. Read every medicine on it: the name and strength as printed, and when it is taken (once daily with no time given means morning; twice daily means morning and evening; three times daily means morning, noon and evening; "at bedtime" means bedtime). Copy what is printed; never guess a medicine you cannot read, and never add one that is not there. If the photo shows no medicine label, return an empty list and say what you see instead.`,
+    MEDS_SCHEMA,
+    [{ text: "The photo:" }, { image }],
+  );
+  return out ?? { meds: [], note: "I couldn't read that one. Could you try another photo, or type them in?" };
 }
 
 // ---------- Talking with the circle ----------

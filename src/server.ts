@@ -2,7 +2,7 @@
 // the onboarding page, the live camera page, and the family page.
 import "dotenv/config";
 import express from "express";
-import { withHer, withCircle, reachOut, type Incoming, type Role, type ElderVerdict, type Mood, type Sticker, type Reach } from "./agent.js";
+import { withHer, withCircle, reachOut, readMeds, type Incoming, type Role, type ElderVerdict, type Mood, type Sticker, type Reach } from "./agent.js";
 import { brainName } from "./brain.js";
 import { addEvent, todaysEvents } from "./store.js";
 import { getProfile, saveProfile, onboarded, getState, saveState, today, clock, type Profile } from "./profile.js";
@@ -63,6 +63,17 @@ async function herMoment(msg: Incoming): Promise<ElderVerdict> {
   if (v.remember_note) s.memories.push({ note: v.remember_note, remindAt: v.remember_at, told: false, day: today() });
   if (v.change) changes.push({ time: new Date().toISOString(), text: v.change });
   saveState();
+
+  // She rearranges her own day by telling Kinly.
+  if (v.set_task !== "none" || v.set_activity) {
+    const p: Profile = structuredClone(getProfile());
+    const time = v.set_time && /^\d{2}:\d{2}$/.test(v.set_time) ? v.set_time : null;
+    if (v.set_activity) p.tasks.activity.what = v.set_activity;
+    if (time && v.set_task === "activity") p.tasks.activity.time = time;
+    if (time && v.set_task === "journal") p.tasks.journal.time = time;
+    if (time && (v.set_task === "breakfast" || v.set_task === "lunch" || v.set_task === "dinner")) p.tasks.meals[v.set_task] = time;
+    saveProfile(p);
+  }
 
   addEvent({
     kind: v.kind,
@@ -193,6 +204,7 @@ app.use("/pet", express.static("pet", { maxAge: "1h" }));
 const profileView = () => ({
   onboarded: onboarded(),
   profile: getProfile(),
+  reminders: getState().memories.filter((m) => !m.told && m.remindAt && m.note.startsWith("[from family] ")).map((m) => ({ note: m.note.replace("[from family] ", ""), at: m.remindAt })),
   links: {
     elder: `https://t.me/${botUsername}?start=elder`,
     family: `https://t.me/${botUsername}?start=family`,
@@ -201,12 +213,45 @@ const profileView = () => ({
   },
 });
 app.get("/api/profile", (_req, res) => res.json(profileView()));
+
+// Onboarding sends who she is, her medicines, and any reminders the family set for her.
+// Activity, meals and the daily record keep their times; she changes those by telling Kinly.
+type Setup = {
+  elderName: string;
+  familyName: string;
+  about?: string;
+  meds?: { list: Profile["tasks"]["meds"]["list"]; times: Profile["tasks"]["meds"]["times"] };
+  reminders?: { note: string; at: string }[];
+};
 app.post("/api/profile", (req, res) => {
-  const p = req.body as Profile;
-  if (!p?.elderName || !p?.familyName || !p?.tasks) return res.status(400).json({ error: "Missing name or tasks" });
+  const b = req.body as Setup;
+  if (!b?.elderName?.trim() || !b?.familyName?.trim()) return res.status(400).json({ error: "Tell Kinly both names first." });
+  const p: Profile = structuredClone(getProfile());
+  p.elderName = b.elderName.trim();
+  p.familyName = b.familyName.trim();
+  p.about = (b.about ?? "").trim();
+  if (b.meds) p.tasks.meds = { on: true, list: b.meds.list.filter((m) => m.name.trim() && m.slots.length), times: b.meds.times };
   saveProfile(p);
+  const s = getState();
+  s.memories = s.memories.filter((m) => m.told || !m.remindAt || !m.note.startsWith("[from family] "));
+  for (const r of b.reminders ?? []) {
+    if (r.note.trim() && r.at) s.memories.push({ note: `[from family] ${r.note.trim()}`, remindAt: r.at, told: false, day: today() });
+  }
+  saveState();
   console.log(`Profile saved for ${p.elderName}`);
   res.json(profileView());
+});
+
+// Onboarding: a photo of the pharmacy bag or prescription, read into a list the family can fix.
+app.post("/api/read-meds", async (req, res) => {
+  try {
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(req.body.image ?? "");
+    if (!m) return res.status(400).json({ meds: [], note: "That file isn't a photo I can open. Try a JPG or PNG." });
+    res.json(await readMeds({ mediaType: m[1], data: m[2] }));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ meds: [], note: "I couldn't read that just now. Try once more, or type them in." });
+  }
 });
 
 app.get("/api/today", (_req, res) =>
