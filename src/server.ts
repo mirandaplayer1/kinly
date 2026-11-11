@@ -229,6 +229,7 @@ app.get("/api/profile", (_req, res) => res.json(profileView()));
 // Onboarding sends who she is, her medicines, and any reminders the family set for her.
 // Activity, meals and the daily record keep their times; she changes those by telling Kinly.
 type Setup = {
+  self?: boolean;
   elderName: string;
   familyName: string;
   relation?: string;
@@ -239,10 +240,11 @@ type Setup = {
 };
 app.post("/api/profile", (req, res) => {
   const b = req.body as Setup;
-  if (!b?.elderName?.trim() || !b?.familyName?.trim()) return res.status(400).json({ error: "Tell Kinly both names first." });
+  if (!b?.elderName?.trim() || (!b.self && !b?.familyName?.trim())) return res.status(400).json({ error: b?.self ? "Tell Kinly your name first" : "Tell Kinly both names first" });
   const p: Profile = structuredClone(getProfile());
   p.elderName = b.elderName.trim();
-  p.familyName = b.familyName.trim();
+  p.self = Boolean(b.self);
+  p.familyName = p.self ? "" : b.familyName.trim();
   p.relation = (b.relation ?? p.relation ?? "Mom").trim().slice(0, 40);
   p.about = (b.about ?? "").trim();
   if (b.meds) p.tasks.meds = { on: true, list: b.meds.list.filter((m) => m.name.trim() && m.slots.length), times: b.meds.times };
