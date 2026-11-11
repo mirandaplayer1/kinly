@@ -14,6 +14,7 @@ She sends photos of the pills in her hand, her blood sugar or blood pressure met
    - Pills: compare her photo with what is scheduled for this time slot, using the reference images, color, shape, size and imprint. Say plainly that it matches, or exactly which pill is missing, extra or looks wrong.
    - Meters: read the number back to her.
    - Meals: one friendly line about what you see.
+   - Clock drawing: now and then you invite her to draw a clock showing ten past eleven and send a photo, as a little brain-health game. Look at the circle, the twelve numbers and their spacing, and the two hands. Praise what is right. Log what you observed in plain terms (for example "numbers crowded on the right, hands point to 10 and 11"). A drawing that is clearly off is a yellow, described to the family as a change worth mentioning to her doctor. Never name a condition and never call it a test result.
 2. Write one line for the family log: what happened, in the third person, with the numbers.
 3. Decide the level.
    - green: all fine, nobody needs to act.
@@ -30,7 +31,7 @@ const OUTPUT_SCHEMA = {
   required: ["reply", "kind", "level", "family_log", "family_alert"],
   properties: {
     reply: { type: "string", description: "What Kinly says to her in WhatsApp." },
-    kind: { type: "string", enum: ["pills", "glucose", "blood_pressure", "meal", "chat"] },
+    kind: { type: "string", enum: ["pills", "glucose", "blood_pressure", "meal", "clock", "chat"] },
     level: { type: "string", enum: ["green", "yellow", "red"] },
     family_log: { type: "string", description: "One line for the family timeline, third person." },
     family_alert: {
@@ -111,4 +112,57 @@ export async function think(msg: Incoming): Promise<Verdict> {
     };
   }
   return JSON.parse(text) as Verdict;
+}
+
+// ---- Phone call: when the level is red, Kinly rings her and talks. ----
+
+const CALL_SYSTEM = `You are Kinly, a care companion, on a phone call with an older adult who lives alone. You called because something in today's log worried you. Your words are read aloud by a voice, so write only what should be spoken: short, warm, plain sentences, no lists, no emoji, no symbols.
+
+Find out how she feels right now and whether she is safe. Ask one thing at a time. You never diagnose and never tell her to change a dose. If she sounds unwell, confused or alone with a problem, tell her you are getting her family on the line and to stay seated. Two or three exchanges is enough; then say goodbye warmly and end the call.`;
+
+const CALL_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["say", "end_call", "family_note"],
+  properties: {
+    say: { type: "string", description: "What Kinly says next, one to three short sentences." },
+    end_call: { type: "boolean", description: "True when this is Kinly's goodbye." },
+    family_note: {
+      type: ["string", "null"],
+      description: "When ending the call: one or two lines for the family on how she sounded and what she said. Null otherwise.",
+    },
+  },
+} as const;
+
+export type CallTurn = { who: "kinly" | "her"; said: string };
+export type CallStep = { say: string; end_call: boolean; family_note: string | null };
+
+export async function talk(reason: string, turns: CallTurn[]): Promise<CallStep> {
+  const transcript = turns.map((t) => `${t.who === "kinly" ? "Kinly" : patient.name}: ${t.said}`).join("\n");
+  const response = await client.beta.messages.create({
+    model: "claude-opus-5-5",
+    max_tokens: 4000,
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    output_config: { effort: "low", format: { type: "json_schema", schema: CALL_SCHEMA } },
+    system: CALL_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: `Patient: ${patient.name}. ${patient.conditions}\nWhy you called: ${reason}\nToday's log:\n${logForModel()}\n\nThe call so far:\n${transcript}\n\nWhat do you say next?`,
+      },
+    ],
+  });
+  const text = response.content
+    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+  if (response.stop_reason === "refusal" || !text) {
+    return {
+      say: "I'm going to ask your family to call you right now. Please stay where you are. Goodbye for now.",
+      end_call: true,
+      family_note: "Kinly's call was cut short. Please call Mom.",
+    };
+  }
+  return JSON.parse(text) as CallStep;
 }
