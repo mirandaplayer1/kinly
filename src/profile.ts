@@ -1,5 +1,5 @@
 // What the family set up at onboarding (profile), and what Kinly remembers (state).
-// Both live in .kinly/ as JSON so they survive restarts. Everything here can be edited again at /start.
+// Both live in .kinly/ (or KINLY_DIR) as JSON so they survive restarts. Everything here can be edited again at /start.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 export type Slot = "morning" | "noon" | "evening" | "bedtime";
@@ -59,7 +59,7 @@ export type State = {
   observations: Observation[]; // what Kinly noticed, kept across days to see change
 };
 
-const DIR = ".kinly";
+const DIR = process.env.KINLY_DIR || ".kinly";
 const read = <T>(name: string): T | null =>
   existsSync(`${DIR}/${name}`) ? (JSON.parse(readFileSync(`${DIR}/${name}`, "utf8")) as T) : null;
 const write = (name: string, value: unknown) => {
@@ -69,7 +69,9 @@ const write = (name: string, value: unknown) => {
 
 export const today = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-export const clock = (d = new Date()) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+// DEMO_CLOCK=08:05 pins the time of day, so a morning scene can be recorded at night.
+export const clock = (d = new Date()) =>
+  /^\d{2}:\d{2}$/.test(process.env.DEMO_CLOCK ?? "") ? process.env.DEMO_CLOCK! : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
 let profile = read<Profile>("profile.json");
 if (profile && profile.self === undefined) profile.self = false;
@@ -83,7 +85,7 @@ export function saveProfile(p: Profile) {
 }
 
 const state: State = read<State>("state.json") ?? { family: [], care: [], day: today(), done: [], asked: [], streaks: {}, memories: [], observations: [] };
-if (!state.elder && existsSync(".kinly-elder")) state.elder = readFileSync(".kinly-elder", "utf8").trim();
+if (!process.env.KINLY_DIR && !state.elder && existsSync(".kinly-elder")) state.elder = readFileSync(".kinly-elder", "utf8").trim();
 
 /** Today's state. A new day clears what was done and asked. */
 export function getState(): State {

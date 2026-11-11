@@ -11,10 +11,13 @@ import { findByImprint } from "./pills.js";
 import { FAMILY_PAGE } from "./family.js";
 import { ONBOARD_PAGE } from "./onboard.js";
 import { SEE_PAGE } from "./see.js";
+import { DEMO_PAGE } from "./demo.js";
 import { telegramOn, botUsername, hasBot, tgText, tgSticker, tgListen, type TgIncoming } from "./telegram.js";
 
 const { PUBLIC_URL, QUIET_MINUTES, PORT = "3000" } = process.env;
-if (!telegramOn) throw new Error("Set TELEGRAM_BOT_TOKEN in .env");
+// DEMO_ONLY=1: no Telegram at all. Three chats live in memory and are shown side by side at /demo.
+const DEMO = process.env.DEMO_ONLY === "1";
+if (!DEMO && !telegramOn) throw new Error("Set TELEGRAM_BOT_TOKEN in .env");
 const base = PUBLIC_URL || `http://localhost:${PORT}`;
 
 let mood: Mood = "cozy"; // how Kinly feels right now
@@ -22,7 +25,25 @@ let lastHeard = Date.now(); // when she last wrote or showed something
 let missedHer = false; // one "I miss you" per quiet stretch
 const changes: { time: string; text: string }[] = []; // changes Kinly noticed today, for the family page
 
-const send = (to: string, body: string) => tgText(to, body);
+// The demo channel: addresses "demo:elder", "demo:family" and "demo:care", each a transcript in memory.
+type DemoWho = "elder" | "family" | "care";
+type DemoLine = { from: "kinly" | "me"; text?: string; sticker?: string; image?: string; time: string };
+const DEMO_WHO: DemoWho[] = ["elder", "family", "care"];
+const demoChats: Record<string, DemoLine[]> = { "demo:elder": [], "demo:family": [], "demo:care": [] };
+const demoPending: Record<string, number> = { "demo:elder": 0, "demo:family": 0, "demo:care": 0 }; // Kinly is working on an answer for this chat
+const demoLine = (to: string, line: Omit<DemoLine, "time">) => void (demoChats[to] ??= []).push({ ...line, time: new Date().toISOString() });
+
+// Everything Kinly sends goes through here; the address says which channel it travels on.
+async function deliver(to: string, m: { text?: string; sticker?: Sticker }) {
+  if (to.startsWith("demo:")) {
+    if (m.sticker && m.sticker !== "none") demoLine(to, { from: "kinly", sticker: m.sticker });
+    if (m.text) demoLine(to, { from: "kinly", text: m.text });
+    return;
+  }
+  if (m.sticker && m.sticker !== "none") await tgSticker(to, `pet/sticker_${m.sticker}.webp`);
+  if (m.text) await tgText(to, m.text);
+}
+const send = (to: string, body: string) => deliver(to, { text: body });
 
 // Family and care team each hear only what is theirs. With nobody joined yet, the note lands in
 // her own chat, labelled, so a one-phone demo still shows every route.
@@ -38,15 +59,22 @@ async function sayToHer(body: string, feeling: Mood, sticker: Sticker = "none") 
   const { elder } = getState();
   if (!elder) return;
   mood = feeling;
-  if (sticker !== "none") await tgSticker(elder, `pet/sticker_${sticker}.webp`).catch(console.error);
+  if (sticker !== "none") await deliver(elder, { sticker }).catch(console.error);
   await send(elder, body);
 }
 
 async function reach(r: Reach) {
-  const out = await reachOut(r, PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
-  await sayToHer(out.message, out.mood, out.sticker);
-  console.log(`-> her (${r.why}${r.why === "mission" ? ` ${r.mission.id}` : ""}): ${out.message}`);
-  return out.message;
+  const { elder } = getState();
+  const shown = elder?.startsWith("demo:") ? elder : null; // the demo page shows Kinly typing meanwhile
+  if (shown) demoPending[shown]++;
+  try {
+    const out = await reachOut(r, PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
+    await sayToHer(out.message, out.mood, out.sticker);
+    console.log(`-> her (${r.why}${r.why === "mission" ? ` ${r.mission.id}` : ""}): ${out.message}`);
+    return out.message;
+  } finally {
+    if (shown) demoPending[shown]--;
+  }
 }
 
 // ---------- Her side: one path for chat and the camera ----------
@@ -127,7 +155,7 @@ async function join(from: string, as: string) {
   return reach({ why: "hello" });
 }
 
-async function onMessage(m: TgIncoming) {
+async function onMessage(m: TgIncoming): Promise<void> {
   // A stand-in bot is always its role: opening it, or writing in it, joins that chat to the circle.
   if (m.via !== "main") {
     const s = getState();
@@ -137,7 +165,7 @@ async function onMessage(m: TgIncoming) {
       if (m.start !== undefined) return;
     }
   } else if (m.start !== undefined) {
-    return join(m.from, m.start);
+    return void (await join(m.from, m.start));
   }
   const { role, text } = roleOf(m.from, m.text, m.via);
   console.log(`<- ${role} ${m.from}: ${text || `(${m.media?.kind ?? "nothing"})`}`);
@@ -217,12 +245,14 @@ const profileView = () => ({
   onboarded: onboarded(),
   profile: getProfile(),
   reminders: getState().memories.filter((m) => !m.told && m.remindAt && m.note.startsWith("[from family] ")).map((m) => ({ note: m.note.replace("[from family] ", ""), at: m.remindAt })),
-  links: {
-    elder: `https://t.me/${botUsername()}?start=elder`,
-    family: hasBot("family") ? `https://t.me/${botUsername("family")}` : `https://t.me/${botUsername()}?start=family`,
-    care: hasBot("care") ? `https://t.me/${botUsername("care")}` : `https://t.me/${botUsername()}?start=care`,
-    page: `${base}/family`,
-  },
+  links: DEMO
+    ? { elder: `${base}/demo#elder`, family: `${base}/demo#family`, care: `${base}/demo#care`, page: `${base}/family` }
+    : {
+        elder: `https://t.me/${botUsername()}?start=elder`,
+        family: hasBot("family") ? `https://t.me/${botUsername("family")}` : `https://t.me/${botUsername()}?start=family`,
+        care: hasBot("care") ? `https://t.me/${botUsername("care")}` : `https://t.me/${botUsername()}?start=care`,
+        page: `${base}/family`,
+      },
 });
 app.get("/api/profile", (_req, res) => res.json(profileView()));
 
@@ -332,9 +362,54 @@ app.all("/nudge/:what", async (req, res) => {
   }
 });
 
-tgListen(onMessage);
+// ---------- The demo channel: three chats on one page, no Telegram ----------
+
+if (DEMO) {
+  app.get("/demo", (_req, res) => res.type("html").send(DEMO_PAGE));
+
+  app.get("/api/demo", (_req, res) => {
+    const s = getState();
+    const joined = { elder: s.elder === "demo:elder", family: s.family.includes("demo:family"), care: s.care.includes("demo:care") };
+    res.json({
+      chats: Object.fromEntries(DEMO_WHO.map((w) => [w, demoChats[`demo:${w}`]])),
+      pending: Object.fromEntries(DEMO_WHO.map((w) => [w, demoPending[`demo:${w}`] > 0])),
+      joined,
+    });
+  });
+
+  // One person says something (or opens their chat for the first time, with `start`). It takes the
+  // same road as a Telegram message: onMessage, with the demo address as the sender.
+  app.post("/api/demo/say", async (req, res) => {
+    const who = req.body?.who as DemoWho;
+    if (!DEMO_WHO.includes(who)) return res.status(400).json({ error: "who must be elder, family or care" });
+    const text = String(req.body?.text ?? "").trim();
+    const image = typeof req.body?.image === "string" ? req.body.image : undefined;
+    const m = image ? /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(image) : null;
+    if (image && !m) return res.status(400).json({ error: "image must be a JPEG, PNG or WebP data URL" });
+    const from = `demo:${who}`;
+    const via = who === "elder" ? "main" : who;
+    const said = Boolean(text || m);
+    if (!said && !req.body?.start) return res.status(400).json({ error: "Nothing to say" });
+    if (said) demoLine(from, { from: "me", ...(text ? { text } : {}), ...(image ? { image } : {}) });
+    demoPending[from]++;
+    try {
+      // First contact for her is the invite link: join as elder, and Kinly says hello.
+      const firstTime = who === "elder" && getState().elder !== from;
+      if (firstTime || (!said && who !== "elder")) await onMessage({ from, via, text: "", start: who });
+      if (said) await onMessage({ from, via, text, media: m ? { kind: "image", mediaType: m[1], data: m[2] } : undefined });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: String(err) });
+    } finally {
+      demoPending[from]--;
+    }
+  });
+} else {
+  tgListen(onMessage);
+}
 
 app.listen(Number(PORT), () => {
-  console.log(`Kinly on ${base}  ·  /start  ·  /family  ·  /see  ·  /nudge/next`);
+  console.log(`Kinly on ${base}  ·  /start  ·  /family  ·  /see  ·  /nudge/next${DEMO ? "  ·  /demo (demo only, no Telegram)" : ""}`);
   console.log(`Brain: ${brainName}`);
 });

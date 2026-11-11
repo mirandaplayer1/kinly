@@ -10,3 +10,12 @@ dist/
 .kinly/
 demo/sample-prescription-tw.png
 demo/sample-medbag-tw.png
+.kinly-demo/
+demo/walkthrough.mp4
+demo/walkthrough-2x.mp4
+demo/kinly-demo.mp4
+demo/walkthrough*.mp4
+video/final/tmp/
+video/final/*.mp4
+demo/glasses-concept.mp4
+video/glasses/raw/
