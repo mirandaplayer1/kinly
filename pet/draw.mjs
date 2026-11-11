@@ -23,6 +23,20 @@ const faces = {
     <ellipse cx="260" cy="306" rx="9" ry="7" fill="${INK}" stroke="none"/>`,
 };
 
+Object.assign(faces, {
+  hello: faces.cozy,
+  yay: `
+    <path d="M196 262 q22 -26 44 0" /><path d="M280 262 q22 -26 44 0" />
+    <path d="M236 296 q24 40 48 0z" fill="${PINK}" />`,
+  love: `
+    <path d="M218 246 c-8 -14 -28 -4 -20 12 c5 10 20 18 20 18 s15 -8 20 -18 c8 -16 -12 -26 -20 -12z" fill="#e8615a" stroke="none"/>
+    <path d="M302 246 c-8 -14 -28 -4 -20 12 c5 10 20 18 20 18 s15 -8 20 -18 c8 -16 -12 -26 -20 -12z" fill="#e8615a" stroke="none"/>
+    <path d="M244 300 q8 10 16 0 q8 10 16 0" />`,
+  sleepy: `
+    <path d="M198 262 q20 12 40 0" /><path d="M282 262 q20 12 40 0" />
+    <ellipse cx="260" cy="304" rx="7" ry="5" fill="${INK}" stroke="none"/>`,
+});
+
 const extras = {
   happy: `
     <g fill="${SCARF}" stroke="none">
@@ -42,6 +56,24 @@ const extras = {
     <path d="M412 196 q14 22 0 34 q-14 -12 0 -34z" fill="#9cc9e8" stroke="none"/>`,
 };
 
+Object.assign(extras, {
+  hello: `<g><ellipse cx="402" cy="300" rx="26" ry="30" transform="rotate(-20 402 300)"/><path d="M436 250 q14 -8 10 -24 M452 274 q16 -2 20 -18" fill="none" stroke-width="5" opacity=".6"/></g>`,
+  yay: `<g stroke="none">
+      <rect x="92" y="130" width="16" height="16" rx="3" fill="${SCARF}" transform="rotate(20 100 138)"/>
+      <rect x="420" y="110" width="16" height="16" rx="3" fill="${PINK}" transform="rotate(-15 428 118)"/>
+      <circle cx="130" cy="230" r="8" fill="#9cc9e8"/><circle cx="440" cy="220" r="8" fill="${PATCH}"/>
+      <rect x="70" y="300" width="14" height="14" rx="3" fill="${PINK}" transform="rotate(35 77 307)"/>
+      <path d="M400 60 l5 13 13 5 -13 5 -5 13 -5 -13 -13 -5 13 -5z" fill="${SCARF}"/>
+    </g>`,
+  love: `<g stroke="none" fill="#e8615a">
+      <path d="M420 140 c-10 -16 -34 -4 -25 15 c6 12 25 22 25 22 s19 -10 25 -22 c9 -19 -15 -31 -25 -15z"/>
+      <path d="M100 200 c-7 -11 -24 -3 -17 10 c4 8 17 15 17 15 s13 -7 17 -15 c7 -13 -10 -21 -17 -10z" opacity=".7"/>
+    </g>`,
+  sleepy: `<g fill="${INK}" stroke="none" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-weight="700" opacity=".6">
+      <text x="388" y="170" font-size="44">z</text><text x="424" y="130" font-size="34">z</text><text x="452" y="100" font-size="26">z</text>
+    </g>`,
+});
+
 const tails = {
   happy: `<path d="M352 420 q70 -10 60 -90" fill="none" stroke-width="26" stroke="${FUR}"/><path d="M352 420 q70 -10 60 -90" fill="none"/>`,
   cozy: `<path d="M340 440 q70 20 80 -30" fill="none"/>`,
@@ -49,12 +81,10 @@ const tails = {
   worried: `<path d="M340 440 q70 10 70 -40" fill="none"/>`,
 };
 
-for (const mood of Object.keys(faces)) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520">
-  <rect width="520" height="520" fill="${BG}"/>
-  <ellipse cx="260" cy="468" rx="130" ry="16" fill="#eadfce"/>
+const draw = (mood, sticker) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520">
+  ${sticker ? "" : `<rect width="520" height="520" fill="${BG}"/><ellipse cx="260" cy="468" rx="130" ry="16" fill="#eadfce"/>`}
   <g stroke="${INK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="${FUR}">
-    ${tails[mood]}
+    ${tails[mood] ?? tails.cozy}
     <path d="M176 470 q-24 -120 84 -120 q108 0 84 120z"/>
     <path d="M150 190 l8 -92 76 54z"/>
     <path d="M370 190 l-8 -92 -76 54z" fill="${PATCH}"/>
@@ -76,6 +106,9 @@ for (const mood of Object.keys(faces)) {
     ${extras[mood]}
   </g>
 </svg>`;
-  writeFileSync(new URL(`./${mood}.svg`, import.meta.url), svg);
+
+for (const mood of Object.keys(faces)) {
+  writeFileSync(new URL(`./${mood}.svg`, import.meta.url), draw(mood, false));
+  writeFileSync(new URL(`./sticker_${mood}.svg`, import.meta.url), draw(mood, true));
 }
 console.log("drew", Object.keys(faces).join(", "));

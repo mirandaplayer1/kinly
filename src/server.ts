@@ -1,13 +1,14 @@
 // Kinly's switchboard: chat with her and her care circle (Telegram or WhatsApp), the live camera page,
 // the phone call on a red moment, and the family page.
 import "dotenv/config";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import express from "express";
 import twilio from "twilio";
-import { withHer, withCircle, reachOut, onThePhone, type Incoming, type CallTurn, type Role, type ElderVerdict, type Mood, type Reason } from "./agent.js";
+import { withHer, withCircle, reachOut, onThePhone, type Incoming, type CallTurn, type Role, type ElderVerdict, type Mood, type Reason, type Sticker } from "./agent.js";
 import { addEvent, todaysEvents } from "./store.js";
 import { FAMILY_PAGE } from "./family.js";
 import { SEE_PAGE } from "./see.js";
-import { telegramOn, tgText, tgPicture, tgListen } from "./telegram.js";
+import { telegramOn, tgText, tgPicture, tgSticker, tgListen } from "./telegram.js";
 
 const {
   TWILIO_ACCOUNT_SID,
@@ -30,7 +31,9 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as co
 type ImageType = (typeof IMAGE_TYPES)[number];
 
 // With Telegram on, a WhatsApp address left in .env is ignored until she writes from Telegram.
-let elder: string | undefined = telegramOn && !ELDER_WHATSAPP?.startsWith("tg:") ? undefined : ELDER_WHATSAPP;
+// Her address is remembered across restarts in .kinly-elder (not committed).
+const remembered = existsSync(".kinly-elder") ? readFileSync(".kinly-elder", "utf8").trim() : undefined;
+let elder: string | undefined = remembered || (telegramOn && !ELDER_WHATSAPP?.startsWith("tg:") ? undefined : ELDER_WHATSAPP);
 let mood: Mood = "cozy"; // how Kinly feels right now
 let shownMood: Mood | undefined; // the last picture of Kinly she was sent
 let lastHeard = Date.now(); // when she last wrote or showed something
@@ -50,18 +53,25 @@ async function send(to: string, body: string, picture?: Mood) {
 const toFamily = async (body: string) => { const to = FAMILY_WHATSAPP_TO || elder; if (to) await send(to, body); };
 const toCare = async (body: string) => { const to = CARE_WHATSAPP_TO || FAMILY_WHATSAPP_TO || elder; if (to) await send(to, body); };
 
-// To her, Kinly has a face. A picture goes along when Kinly's mood changes, or always when asked.
-async function sayToHer(body: string, feeling: Mood, withPicture = false) {
+// To her, Kinly has a face. In Telegram that is a sticker dropped before the words; in WhatsApp,
+// a picture that goes along when Kinly's mood changes.
+async function sayToHer(body: string, feeling: Mood, sticker: Sticker = "none") {
   if (!elder) return;
   mood = feeling;
-  const picture = withPicture || feeling !== shownMood ? feeling : undefined;
+  if (elder.startsWith("tg:")) {
+    if (sticker !== "none") await tgSticker(elder, `pet/sticker_${sticker}.webp`).catch(console.error);
+    await send(elder, body);
+    return;
+  }
+  const picture = sticker !== "none" && feeling !== shownMood ? feeling : undefined;
   if (picture) shownMood = feeling;
   await send(elder, body, picture);
 }
 
 async function reach(reason: Reason) {
   const out = await reachOut(reason, PUBLIC_URL ? `${PUBLIC_URL}/see` : null);
-  await sayToHer(out.message, out.mood, true);
+  shownMood = undefined;
+  await sayToHer(out.message, out.mood, out.sticker);
   console.log(`-> her (${reason}): ${out.message}`);
   return out.message;
 }
@@ -105,9 +115,9 @@ async function onMessage(from: string, rawText: string, image?: Incoming["image"
   console.log(`<- ${role} ${from}: ${text || "(photo)"}`);
   try {
     if (role === "elder") {
-      elder ??= from;
+      if (!elder) writeFileSync(".kinly-elder", (elder = from));
       const v = await herMoment({ text, image });
-      await sayToHer(v.reply, v.mood);
+      await sayToHer(v.reply, v.mood, v.sticker);
       return;
     }
     const c = await withCircle(role, text);
@@ -115,7 +125,7 @@ async function onMessage(from: string, rawText: string, image?: Incoming["image"
     await send(from, `Kinly → ${role === "family" ? "family" : "care team"}\n${c.reply}`);
     console.log(`-> ${role}: ${c.reply}`);
     if (c.to_her && elder) {
-      await sayToHer(c.to_her, role === "family" ? "happy" : "cozy");
+      await sayToHer(c.to_her, role === "family" ? "happy" : "cozy", role === "family" ? "love" : "cozy");
       console.log(`-> her (passed on): ${c.to_her}`);
     }
   } catch (err) {

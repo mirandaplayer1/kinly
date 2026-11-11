@@ -41,9 +41,14 @@ Then decide the level:
 const ELDER_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["reply", "mood", "kind", "level", "log", "to_family", "to_care_team"],
+  required: ["reply", "sticker", "mood", "kind", "level", "log", "to_family", "to_care_team"],
   properties: {
     reply: { type: "string", description: "What Kinly says to her." },
+    sticker: {
+      type: "string",
+      enum: ["none", "hello", "happy", "yay", "love", "cozy", "sleepy", "missing_you", "worried"],
+      description: "A sticker of yourself to send with the reply, the way a friend drops a sticker in a chat. hello: waving. happy: content smile. yay: celebrating (she took her pills, a good reading). love: heart eyes (something sweet from her or her family). cozy: sitting with tea. sleepy: dozing. missing_you: wistful. worried: concerned. Use one most of the time, since it is how she sees you; choose none in a red moment or when a sticker would feel flippant.",
+    },
     mood: {
       type: "string",
       enum: ["happy", "cozy", "missing_you", "worried"],
@@ -65,8 +70,11 @@ const ELDER_SCHEMA = {
 
 export type Mood = "happy" | "cozy" | "missing_you" | "worried";
 
+export type Sticker = "none" | "hello" | "happy" | "yay" | "love" | "cozy" | "sleepy" | "missing_you" | "worried";
+
 export type ElderVerdict = {
   reply: string;
+  sticker: Sticker;
   mood: Mood;
   kind: Kind;
   level: Level;
@@ -136,6 +144,7 @@ export async function withHer(msg: Incoming): Promise<ElderVerdict> {
   return (
     (await ask<ElderVerdict>(ELDER_SYSTEM, ELDER_SCHEMA, content)) ?? {
       reply: `I couldn't quite make that out. I'll ask ${FAMILY} to give you a ring.`,
+      sticker: "none",
       mood: "worried",
       kind: "chat",
       level: "yellow",
@@ -183,21 +192,25 @@ export async function withCircle(role: Role, text: string): Promise<CircleVerdic
 
 export type Reason = "hello" | "pills" | "miss_you" | "goodnight";
 
-const REACH: Record<Reason, { mood: Mood; brief: string }> = {
+const REACH: Record<Reason, { mood: Mood; sticker: Sticker; brief: string }> = {
   hello: {
     mood: "happy",
+    sticker: "hello",
     brief: "It is the start of this time slot and you are glad she is up. Greet her as yourself, mention which pills are for now by what they look like, and invite her to show or tell you anything.",
   },
   pills: {
     mood: "cozy",
+    sticker: "cozy",
     brief: "It is time for this slot's pills and you have not seen them yet today. Nudge her the way a pet nudges: lightly, with a reason of your own for wanting her well. Describe the pills by what they look like.",
   },
   miss_you: {
     mood: "missing_you",
+    sticker: "missing_you",
     brief: "The day has been quiet and you miss her. Say so simply, mention one thing from today's log or ask one easy question about her day. No mention of pills unless some are overdue.",
   },
   goodnight: {
     mood: "cozy",
+    sticker: "sleepy",
     brief: "The day is ending. Tell her one thing you enjoyed about today from the log, mention what you told her family if anything, and say goodnight.",
   },
 };
@@ -209,7 +222,7 @@ const REACH_SCHEMA = {
   properties: { message: { type: "string" } },
 } as const;
 
-export async function reachOut(reason: Reason, cameraLink: string | null): Promise<{ message: string; mood: Mood }> {
+export async function reachOut(reason: Reason, cameraLink: string | null): Promise<{ message: string; mood: Mood; sticker: Sticker }> {
   const slot = currentSlot();
   const doses = patient.schedule[slot].map((d) => `${d.count} x ${d.pill.name} (${d.purpose}; ${d.pill.color}, ${d.pill.shape})`).join("; ");
   const link = cameraLink && reason === "hello" ? ` End with this link on its own line, introduced as the way to show you things live: ${cameraLink}` : "";
@@ -218,7 +231,7 @@ export async function reachOut(reason: Reason, cameraLink: string | null): Promi
     REACH_SCHEMA,
     [{ type: "text", text: `Time slot: ${slot}. Scheduled now: ${doses || "nothing"}.\nToday's log:\n${logForModel()}` }],
   );
-  return { message: out?.message ?? "It's Kinly. I was just thinking about you. How's your day going?", mood: REACH[reason].mood };
+  return { message: out?.message ?? "It's Kinly. I was just thinking about you. How's your day going?", mood: REACH[reason].mood, sticker: REACH[reason].sticker };
 }
 
 // ---------- Phone call: on a red moment, Kinly rings her ----------

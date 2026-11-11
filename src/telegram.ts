@@ -27,6 +27,13 @@ export async function tgPicture(to: string, caption: string, file: string) {
   return call("sendPhoto", form);
 }
 
+export async function tgSticker(to: string, file: string) {
+  const form = new FormData();
+  form.set("chat_id", chatId(to));
+  form.set("sticker", new Blob([readFileSync(file)], { type: "image/webp" }), "kinly.webp");
+  return call("sendSticker", form);
+}
+
 export type TgIncoming = {
   from: string; // "tg:<chat id>"
   text: string;
