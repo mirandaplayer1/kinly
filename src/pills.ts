@@ -70,3 +70,14 @@ export function findPill(englishName: string): Pill {
     imageUrl: row.外觀圖檔連結,
   };
 }
+
+/** Find a pill by a name the family typed: exact product name first, then the closest match that contains it. */
+export function softFindPill(name: string): Pill | null {
+  const want = name.trim().toUpperCase();
+  if (!want) return null;
+  const row =
+    rows.find((r) => r.英文品名?.toUpperCase() === want) ??
+    rows.find((r) => r.英文品名?.toUpperCase().startsWith(want)) ??
+    rows.find((r) => r.英文品名?.toUpperCase().includes(want));
+  return row ? findPill(row.英文品名) : null;
+}

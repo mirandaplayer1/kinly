@@ -1,54 +1,71 @@
-// The family's view: one live page with today's timeline.
+// The family's view: today's missions, what changed, and the timeline.
 export const FAMILY_PAGE = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kinly · Mom's day</title>
+<title>Kinly · Her day</title>
 <style>
   :root { --bg:#faf7f2; --card:#fff; --ink:#1f2421; --muted:#6b736e; --line:#e7e1d6;
-          --green:#2f7d5b; --yellow:#b7791f; --red:#c0392b; }
+          --green:#2f7d5b; --yellow:#b7791f; --red:#c0392b; --accent:#e0a526; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-         font: 17px/1.45 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; }
-  main { max-width: 620px; margin: 0 auto; padding: 28px 16px 60px; }
-  header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
+  body { margin:0; background:var(--bg); color:var(--ink); font: 17px/1.45 -apple-system, "SF Pro Text", "Segoe UI", sans-serif; }
+  main { max-width: 620px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom: 14px; }
+  header img { width:64px; height:64px; border-radius:18px; border:1px solid var(--line); }
   h1 { font-size: 28px; margin:0; letter-spacing:-0.02em; }
-  .brand { color:var(--muted); font-weight:600; }
-  #status { font-size: 20px; font-weight:600; margin: 14px 0 22px; padding: 16px 18px;
-            border-radius: 14px; background: var(--card); border:1px solid var(--line); }
+  header a { margin-left:auto; color:var(--muted); font-size:14px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 22px 0 10px; }
+  #status { font-size: 20px; font-weight:600; padding: 16px 18px; border-radius: 14px; background: var(--card); border:1px solid var(--line); }
   #status.green { color: var(--green); } #status.yellow { color: var(--yellow); } #status.red { color: var(--red); }
-  .event { display:flex; gap:14px; background:var(--card); border:1px solid var(--line);
-           border-left: 5px solid var(--green); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .missions { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px; }
+  .mission { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+  .mission.done { border-color: var(--green); }
+  .mission .t { font-size:13px; color:var(--muted); font-variant-numeric: tabular-nums; }
+  .mission .n { font-weight:700; }
+  .mission .s { font-size:13px; color:var(--muted); }
+  .mission.done .s { color: var(--green); font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+  .change { border-left: 5px solid var(--accent); }
+  .event { display:flex; gap:14px; border-left: 5px solid var(--green); }
   .event.yellow { border-left-color: var(--yellow); } .event.red { border-left-color: var(--red); }
   .event img { width: 76px; height: 76px; object-fit: cover; border-radius: 10px; flex: none; }
-  .meta { color: var(--muted); font-size: 14px; margin-bottom: 2px; text-transform: capitalize; }
-  .empty { color: var(--muted); text-align:center; padding: 40px 0; }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 2px; }
+  .empty { color: var(--muted); padding: 8px 0; }
 </style>
 </head>
 <body>
 <main>
-  <header><h1>Mom's day</h1><span class="brand"><img id="pet" src="/pet/cozy.png" alt="Kinly" style="width:54px;height:54px;border-radius:50%;vertical-align:middle;margin-right:8px;border:1px solid var(--line)">Kinly</span></header>
-  <div id="status" class="green">Waiting for Mom's first check-in…</div>
+  <header><img id="pet" src="/pet/cozy.png" alt="Kinly"><h1 id="title">Her day</h1><a href="/start">Settings</a></header>
+  <div id="status" class="green">Waiting for the first check-in…</div>
+  <h2>Today's missions</h2>
+  <div id="missions" class="missions"></div>
+  <div id="changesWrap" hidden><h2>Changes Kinly noticed</h2><div id="changes"></div></div>
+  <h2>Timeline</h2>
   <div id="list"><p class="empty">Nothing yet today.</p></div>
 </main>
 <script>
-const LABEL = { pills: "Pills", glucose: "Blood sugar", blood_pressure: "Blood pressure", meal: "Meal", clock: "Brain-health check-in", chat: "Chat with Kinly", call: "Kinly called her", family: "From family", care: "From care team" };
-const HEAD = { green: "All good today", yellow: "Worth a call today", red: "Check on Mom now" };
+const LABEL = { pills: "Pills", glucose: "Blood sugar", blood_pressure: "Blood pressure", meal: "Meal", activity: "Activity", journal: "Daily record", memory: "Asked Kinly to remember", clock: "Brain-health check-in", chat: "Chat with Kinly", family: "From family", care: "From care team" };
+const HEAD = { green: "All good today", yellow: "Worth a call today", red: "Check on her now" };
 const ORDER = { green: 0, yellow: 1, red: 2 };
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+const time = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 async function refresh() {
-  fetch("/api/state").then(r => r.json()).then(s => { document.getElementById("pet").src = "/pet/" + s.mood + ".png"; }).catch(() => {});
-  const events = await (await fetch("/api/events")).json();
-  if (!events.length) return;
-  const worst = events.reduce((w, e) => ORDER[e.level] > ORDER[w] ? e.level : w, "green");
+  const d = await (await fetch("/api/today")).json();
+  document.getElementById("title").textContent = d.elderName + "'s day";
+  document.getElementById("pet").src = "/pet/" + d.mood + ".png";
+  document.getElementById("missions").innerHTML = d.missions.map(m =>
+    '<div class="mission ' + (m.done ? "done" : "") + '"><div class="t">' + m.time + '</div><div class="n">' + esc(m.title) + '</div><div class="s">' +
+    (m.done ? "Done" + (m.streak > 1 ? " · " + m.streak + " days in a row" : "") : m.asked ? "Kinly asked" : "Later today") + '</div></div>').join("") || '<p class="empty">No missions switched on.</p>';
+  document.getElementById("changesWrap").hidden = d.changes.length === 0;
+  document.getElementById("changes").innerHTML = d.changes.map(c => '<div class="card change"><div class="meta">' + time(c.time) + '</div>' + esc(c.text) + '</div>').join("");
+  if (!d.events.length) return;
+  const worst = d.events.reduce((w, e) => ORDER[e.level] > ORDER[w] ? e.level : w, "green");
   const status = document.getElementById("status");
   status.className = worst; status.textContent = HEAD[worst];
-  document.getElementById("list").innerHTML = events.slice().reverse().map(e => {
-    const t = new Date(e.time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    return '<div class="event ' + e.level + '">' + (e.photo ? '<img src="' + e.photo + '" alt="">' : '') +
-      '<div><div class="meta">' + t + ' · ' + LABEL[e.kind] + '</div>' + esc(e.summary) + '</div></div>';
-  }).join("");
+  document.getElementById("list").innerHTML = d.events.slice().reverse().map(e =>
+    '<div class="card event ' + e.level + '">' + (e.photo ? '<img src="' + e.photo + '" alt="">' : '') +
+    '<div><div class="meta">' + time(e.time) + ' · ' + (LABEL[e.kind] || e.kind) + '</div>' + esc(e.summary) + '</div></div>').join("");
 }
 refresh(); setInterval(refresh, 2000);
 </script>
